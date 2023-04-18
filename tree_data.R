@@ -1,3 +1,3 @@
 ##script1
 
-holaa
+tree234 <- read.csv("data/tree234_plotscomparable234.csv")
