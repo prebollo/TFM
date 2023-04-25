@@ -3,6 +3,8 @@
 tree234 <- read.csv("data/tree234_plotscomparable234.csv")
 str(tree234)
 table(tree234$Provincia) ##esta castilla leon
+
+###Los NAs de estas variables son en realidad 0
 tree234[is.na(tree234$Agente_fin), "Agente_fin"] <- 0
 tree234[is.na(tree234$Agente_ini), "Agente_ini"] <- 0
 tree234[is.na(tree234$densini), "densini"] <- 0
