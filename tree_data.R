@@ -26,16 +26,15 @@ tree234[is.na(tree234$Importancia_fin), "Importancia_fin"] <- 0 ##coincide con e
 ###es porque asi me aclaro yo mejor
 tree23 <- tree234[tree234$IFNcode=="IFN23", ]
 tree34 <- tree234[tree234$IFNcode=="IFN34", ]
-vivos <- tree23[tree23$ABdead==0, ]
-muertos <- tree23[tree23$ABdead!=0, ]
-sum(vivos$ABdead==0)
-
-325049+47020
 
 ##incendios
-tree23$fire3 <- 
+tree23$fire3 <- ifelse(tree23$Agente_fin==421, tree23$ABm2hafin+tree23$ABdead, 0)
+tree34$fire4 <- ifelse(tree34$Agente_fin==421, tree34$ABm2hafin+tree34$ABdead, 0)
 
-plot1 <- tree23[tree23$Agente_fin==421, ] 
+##bioticos
+tree23$biotic_damage <- ifelse()
+
+
 
 ##para agregar todas las columnas a la vez y no de una en una :)
 aggregate(cbind(points,rebounds) ~ team, data = df, FUN = mean, na.rm = TRUE)
