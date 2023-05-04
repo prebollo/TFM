@@ -92,30 +92,47 @@ tree34$ABcut <- ifelse(tree34$Cut34==1, tree34$ABdeadabs, 0)
 
 
 ##agrego a nivel plot (por partes porque para el dbh hago la media)
-#falta ver que analisis/objetivos queremos ver
-plot23 <- aggregate(cbind(ABdead, ABdeadpres, ABdeadabs,  ABm2haini,ABm2hafin, densini, densfin, biotic3_low, biotic3_mid, biotic3_high, 
-                            biotic3, fire3_low, fire3_mid, fire3_high, fire3) ~ Plotcode, data = tree23, FUN = sum, na.rm = F)
-dbh23 <- aggregate(cbind(dbhini, dbhfin) ~ Plotcode, data = tree23, FUN=mean, na.rm = F)
+plot23 <- aggregate(cbind(ABm2haini, densini, ABdead, ABdeadpres, ABdeadabs, biotic3_low, biotic3_mid, biotic3_high, 
+                            biotic3, fire3_low, fire3_mid, fire3_high, fire3, ABcut) ~ Plotcode, data = tree23, FUN = sum, na.rm = F)
+
+dbh23 <- aggregate(cbind(dbhini) ~ Plotcode, data = tree23, FUN=mean, na.rm = F)
+
+plot23 <- merge(plot23, dbh23, by="Plotcode", all.x = T)
+
+names(plot23)
+names(plot23) <- c("Plotcode", "ba_ha2", "dens2", "ABdead23", "ABdeadpres23", "ABdeadabs23", "biotic_low3",
+                   "biotic3_mid", "biotic3_high", "biotic3", "fire3_low", "fire3_mid", "fire3_high", "fire3", "ABcut23", "mdbh2")
+
+
+names(tree34)
+plot34 <- aggregate(cbind(ABm2haini, ABm2hafin, densini, densfin, ABdead, ABdeadpres, ABdeadabs, biotic4_low, biotic4_mid, biotic4_high, 
+                          biotic4, fire4_low, fire4_mid, fire4_high, fire4, ABcut) ~ Plotcode, data = tree34, FUN = sum, na.rm = F)
+
+dbh34 <- aggregate(cbind(dbhini, dbhfin) ~ Plotcode, data = tree34, FUN=mean, na.rm = F)
+
+plot34 <- merge(plot34, dbh34, by="Plotcode", all.x = T)
+
+names(plot34)
+names(plot34) <- c("Plotcode", "ba_ha3", "ba_ha4", "dens3", "dens4", "ABdead34", "ABdeadpres34", "ABdeadabs34", "biotic_low4",
+                   "biotic4_mid", "biotic4_high", "biotic4", "fire4_low", "fire4_mid", "fire4_high", "fire4", "ABcut34", "mdbh3", "mdbh4")
+
+plot234 <- merge(plot23, plot34, by="Plotcode", all.x = T)
+sum(is.na(plot234))
 
 
 
 
+##temperatura y precipitacion
+clima_medio <- read.csv2("data/climaavgifn.csv")
+names(clima_medio)
+clima <- clima_medio[clima_medio$PLOTCODE%in%plot234$Plotcode, c("PLOTCODE", "lon", "lat", "year2", "year3", "year4", 
+                                                                 "avgPrcp", "avgMinTemp", "avgMinTempAbs", "avgMaxTemp", 
+                                                                 "avgMaxTempAbs", "avgMeanTemp")]
 
 
 
-
-
-
-
-
-
-
-
-
-
-##para agregar todas las columnas a la vez y no de una en una :)
-aggregate(cbind(points,rebounds) ~ team, data = df, FUN = mean, na.rm = TRUE)
-
+##sequias (SPEI)
+climaifn <- read.csv2("data/climaifn.csv")
 
 
 
