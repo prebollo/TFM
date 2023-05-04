@@ -43,25 +43,52 @@ tree34$fire4 <- tree34$fire4_low+tree34$fire4_mid+tree34$fire4_high
 
 
 ##bioticos
-##Hongos, insectos, muerdago, plantas epifitas y dominancia
+##Hongos (310), insectos (311), muerdago (312), plantas epifitas (313)
 table(tree23$Agente_fin)
-tree23$biotic3_low <- ifelse(tree23$Agente_fin %in% c(310, 311, 312, 313, 316) & 
+tree23$biotic3_low <- ifelse(tree23$Agente_fin %in% c(310, 311, 312, 313) & 
                                tree23$Importancia_fin==1, tree23$ABm2hafin+tree23$ABdead, 0)
-tree23$biotic3_mid <- ifelse(tree23$Agente_fin %in% c(310, 311, 312, 313, 316) &
+tree23$biotic3_mid <- ifelse(tree23$Agente_fin %in% c(310, 311, 312, 313) &
                                tree23$Importancia_fin==2, tree23$ABm2hafin+tree23$ABdead, 0)
-tree23$biotic3_high <- ifelse(tree23$Agente_fin %in% c(310, 311, 312, 313, 316) & 
+tree23$biotic3_high <- ifelse(tree23$Agente_fin %in% c(310, 311, 312, 313) & 
                                 tree23$Importancia_fin==3, tree23$ABm2hafin+tree23$ABdead, 0)
 tree23$biotic3 <- tree23$biotic3_low+tree23$biotic3_mid+tree23$biotic3_high
 
 
-tree34$biotic4_low <- ifelse(tree34$Agente_fin %in% c(310, 311, 312, 313, 316) & 
+tree34$biotic4_low <- ifelse(tree34$Agente_fin %in% c(310, 311, 312, 313) & 
                                tree34$Importancia_fin==1, tree34$ABm2hafin+tree34$ABdead, 0)
-tree34$biotic4_mid <- ifelse(tree34$Agente_fin %in% c(310, 311, 312, 313, 316) &
+tree34$biotic4_mid <- ifelse(tree34$Agente_fin %in% c(310, 311, 312, 313) &
                                tree34$Importancia_fin==2, tree34$ABm2hafin+tree34$ABdead, 0)
-tree34$biotic4_high <- ifelse(tree34$Agente_fin %in% c(310, 311, 312, 313, 316) & 
+tree34$biotic4_high <- ifelse(tree34$Agente_fin %in% c(310, 311, 312, 313) & 
                                 tree34$Importancia_fin==3, tree34$ABm2hafin+tree34$ABdead, 0)
 tree34$biotic4 <- tree34$biotic4_low+tree34$biotic4_mid+tree34$biotic4_high
 
+
+##cortas
+##para las cortas sumo el area basal ausente de los plots donde si ha habido gestion
+##para eso leo los datos a nivel plot (es donde esta el campo de gestion si/no)
+
+plot234 <- read.csv("data/plot234_row_allplots.csv")
+plot23 <- plot234[plot234$IFNcode=="IFN23", ]
+plot34 <- plot234[plot234$IFNcode=="IFN34", ]
+
+cut23 <- plot23[, c("plotcode", "Cut")]
+names(cut23) <- c("Plotcode", "Cut23")
+table(cut23$Cut23)
+
+tree23 <- merge(tree23, cut23, by="Plotcode", all.x = T)
+sum(is.na(tree23$Cut23))
+tree23 <- tree23[!is.na(tree23$Cut23), ] ##Quito 22 arboles con NAs en las cortas
+tree23$ABcut <- ifelse(tree23$Cut23==1, tree23$ABdeadabs, 0)
+
+
+
+cut34 <- plot34[, c("plotcode", "Cut")]
+names(cut34) <- c("Plotcode", "Cut34")
+table(cut34$Cut34)
+
+tree34 <- merge(tree34, cut34, by="Plotcode", all.x = T)
+sum(is.na(tree34$Cut34)) #No hay NAs
+tree34$ABcut <- ifelse(tree34$Cut34==1, tree34$ABdeadabs, 0)
 
 
 ##agrego a nivel plot (por partes porque para el dbh hago la media)
@@ -79,21 +106,6 @@ dbh23 <- aggregate(cbind(dbhini, dbhfin) ~ Plotcode, data = tree23, FUN=mean, na
 
 
 
-##cortas
-##para las cortas sumo el area basal ausente de los plots donde si ha habido gestion
-##para eso leo los datos a nivel plot (es donde esta el campo de gestion si/no)
-
-plot234 <- read.csv("data/plot234_row_allplots.csv")
-plot23 <- plot234[plot234$IFNcode=="IFN23", ]
-plot34 <- plot234[plot234$IFNcode=="IFN34", ]
-
-cut23 <- plot23[, c("plotcode", "Cut")]
-names(cut23) <- c("Plotcode", "Cut")
-table(cut23$Cut)
-
-cut34 <- plot34[, c("plotcode", "Cut")]
-names(cut34) <- c("Plotcode", "Cut")
-table(cut34$Cut)
 
 
 
