@@ -91,6 +91,14 @@ sum(is.na(tree34$Cut34)) #No hay NAs
 tree34$ABcut <- ifelse(tree34$Cut34==1, tree34$ABdeadabs, 0)
 
 
+
+###falta el coeficiente de variacion
+sddbh2 <- aggregate(tree23$dbhini, by=list(tree23$Plotcode), sd)/aggregate(tree23$dbhini, by=list(tree23$Plotcode), mean)
+names(sddbh2) <- c("Plotcode", "sddbh2")
+
+summary(sddbh2$sddbh2)
+
+
 ##agrego a nivel plot (por partes porque para el dbh hago la media)
 plot23 <- aggregate(cbind(ABm2haini, densini, ABdead, ABdeadpres, ABdeadabs, biotic3_low, biotic3_mid, biotic3_high, 
                             biotic3, fire3_low, fire3_mid, fire3_high, fire3, ABcut) ~ Plotcode, data = tree23, FUN = sum, na.rm = F)
@@ -118,8 +126,6 @@ names(plot34) <- c("Plotcode", "ba_ha3", "ba_ha4", "dens3", "dens4", "ABdead34",
 
 plot234 <- merge(plot23, plot34, by="Plotcode", all.x = T)
 sum(is.na(plot234))
-
-
 
 
 ##temperatura y precipitacion
