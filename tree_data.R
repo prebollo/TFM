@@ -167,7 +167,7 @@ latlon <- data_latlon %>%
 
 latlon <- latlon[, c("PLOTCODE", "CX", "CY")]
 names(latlon) <- c("Plotcode", "lon", "lat")
-latlon <- latlon[!duplicated(latlon$Plotcode), ]
+latlon <- latlon[!duplicated(latlon$Plotcode), ] #Hay duplicadas pero las coordenadas coinciden
 
 #merge con la base de datos principal
 plot234 <- merge(plot234, latlon, by="Plotcode", all.x = T)
@@ -177,16 +177,76 @@ sum(is.na(plot234$lat)) ##no hay NAs, no perdemos datos :D
 ##temperatura y precipitacion
 clima_medio <- read.csv2("data/climaavgifn.csv")
 names(clima_medio)
-clima <- clima_medio[clima_medio$PLOTCODE%in%plot234$Plotcode, c("PLOTCODE", "lon", "lat", "year2", "year3", "year4", 
-                                                                 "avgPrcp", "avgMinTemp", "avgMinTempAbs", "avgMaxTemp", 
-                                                                 "avgMaxTempAbs", "avgMeanTemp")]
+clima <- clima_medio[clima_medio$PLOTCODE%in%plot234$Plotcode, c("PLOTCODE", "avgPrcp", "avgMinTemp", 
+                                                                 "avgMinTempAbs", "avgMaxTemp", 
+                                                                 "avgMaxTempAbs", "avgMeanTemp", "avgBalhid")]
 
+clima <- na.omit(clima) ##se pierden 4 parcelas por el camino
+sum(is.na(clima))
+names(clima)
+names(clima) <- c("Plotcode", "avgPrcp", "avgMinTemp", "avgMinTempAbs", 
+                  "avgMaxTemp", "avgMaxTempAbs", "avgMeanTemp", "avgBalhid")
+clima <- lapply(clima, as.numeric)
+clima <- as.data.frame(clima)
+str(clima)
+clima <- clima[!duplicated(clima$Plotcode), ] #Hay parcelas duplicadas pero los valores de las variables coinciden
+clima$PET <- clima$avgPrcp-clima$avgBalhid
+clima$WAI <- (clima$PET-clima$avgPrcp)/clima$PET
+sum(is.na(clima))
+
+#uno el clima a la base de datos principal
+plot234 <- merge(plot234, clima, by="Plotcode", all.x = T)
+plot234 <- na.omit(plot234) #Quito los NAs de las parcelas que se pierden en los datos del clima (827 plots)
 
 
 ##sequias (SPEI)
 climaifn <- read.csv2("data/climaifn.csv")
 
+SPEI <- data.frame(climaifn$PLOTCODE, climaifn$IFN, climaifn$minSPEI_AVG)
+names(SPEI) <- c("Plotcode", "IFN", "minSPEI")
+SPEI$minSPEI <- as.numeric(SPEI$minSPEI)
+SPEI <- SPEI[!is.na(SPEI$minSPEI), ]
+SPEI <- SPEI[!is.infinite(SPEI$minSPEI), ]
 
+SPEI2 <- SPEI[SPEI$IFN==2, ]
+SPEI3 <- SPEI[SPEI$IFN==3, ]
+SPEI4 <- SPEI[SPEI$IFN==4, ]
+SPEI2$IFN <- NULL
+SPEI3$IFN <- NULL 
+SPEI4$IFN <- NULL
 
+###Faltan los datos de CyL para IFN4, lo tengo en otros datos aparte
+
+CyL <- read.csv2("data/climaifn_CyL.csv")
+
+CyL <- CyL[, c("plotcode", "IFN", "minSPEI_AVG")]
+sum(is.na(CyL$minSPEI_AVG))
+str(CyL)
+
+SPEI4_cyl <- CyL[CyL$IFN==4, ]
+SPEI4_cyl$minSPEI <- as.numeric(gsub(",", ".", gsub("\\.", "", SPEI4_cyl$minSPEI_AVG)))
+sum(is.infinite(SPEI4_cyl$minSPEI))
+SPEI4_cyl$IFN <- NULL
+SPEI4_cyl$minSPEI_AVG <- NULL
+names(SPEI4_cyl) <- c("Plotcode", "minSPEI")
+SPEI4 <- rbind(SPEI4, SPEI4_cyl)
+
+names(SPEI2) <- c("Plotcode", "SPEI2")
+names(SPEI3) <- c("Plotcode", "SPEI3")
+names(SPEI4) <- c("Plotcode", "SPEI4")
+SPEI2 <- SPEI2[!duplicated(SPEI2$Plotcode), ]
+SPEI3 <- SPEI3[!duplicated(SPEI3$Plotcode), ]
+SPEI4 <- SPEI4[!duplicated(SPEI4$Plotcode), ]
+
+minSPEI <- merge(SPEI3, SPEI2, by="Plotcode", all.x = T) #empiezo por el 3 porque es el que mas plots tiene
+minSPEI <- merge(minSPEI, SPEI4, by="Plotcode", all.x = T)
+minSPEI <- na.omit(minSPEI)
+
+#cruzo los datos a la base de datos principal
+plot234i <- merge(plot234, minSPEI, by="Plotcode", all.x = T)
+sum(is.na(plot234i$SPEI4)) ###Pierdo 3707 plots con los datos de SPEI
+plot234 <- na.omit(plot234i) ##En total tengo 13542 plots con todos los datos (a falta de diversidad)
+
+write.csv(plot234, "data_plot234.csv")
 
 
