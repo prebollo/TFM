@@ -1,5 +1,3 @@
-##script1
-
 tree234 <- read.csv("data/tree234_plotscomparable234.csv")
 str(tree234)
 table(tree234$Provincia) ##esta castilla leon
@@ -90,15 +88,6 @@ tree34 <- merge(tree34, cut34, by="Plotcode", all.x = T)
 sum(is.na(tree34$Cut34)) #No hay NAs
 tree34$ABcut <- ifelse(tree34$Cut34==1, tree34$ABdeadabs, 0)
 
-
-
-###falta el coeficiente de variacion
-sddbh2 <- aggregate(tree23$dbhini, by=list(tree23$Plotcode), sd)/aggregate(tree23$dbhini, by=list(tree23$Plotcode), mean)
-names(sddbh2) <- c("Plotcode", "sddbh2")
-
-summary(sddbh2$sddbh2)
-
-
 ##agrego a nivel plot (por partes porque para el dbh hago la media)
 plot23 <- aggregate(cbind(ABm2haini, densini, ABdead, ABdeadpres, ABdeadabs, biotic3_low, biotic3_mid, biotic3_high, 
                             biotic3, fire3_low, fire3_mid, fire3_high, fire3, ABcut) ~ Plotcode, data = tree23, FUN = sum, na.rm = F)
@@ -106,13 +95,11 @@ plot23 <- aggregate(cbind(ABm2haini, densini, ABdead, ABdeadpres, ABdeadabs, bio
 dbh23 <- aggregate(cbind(dbhini) ~ Plotcode, data = tree23, FUN=mean, na.rm = F)
 
 plot23 <- merge(plot23, dbh23, by="Plotcode", all.x = T)
-
 names(plot23)
+
 names(plot23) <- c("Plotcode", "ba_ha2", "dens2", "ABdead23", "ABdeadpres23", "ABdeadabs23", "biotic_low3",
                    "biotic3_mid", "biotic3_high", "biotic3", "fire3_low", "fire3_mid", "fire3_high", "fire3", "ABcut23", "mdbh2")
 
-
-names(tree34)
 plot34 <- aggregate(cbind(ABm2haini, ABm2hafin, densini, densfin, ABdead, ABdeadpres, ABdeadabs, biotic4_low, biotic4_mid, biotic4_high, 
                           biotic4, fire4_low, fire4_mid, fire4_high, fire4, ABcut) ~ Plotcode, data = tree34, FUN = sum, na.rm = F)
 
@@ -121,11 +108,70 @@ dbh34 <- aggregate(cbind(dbhini, dbhfin) ~ Plotcode, data = tree34, FUN=mean, na
 plot34 <- merge(plot34, dbh34, by="Plotcode", all.x = T)
 
 names(plot34)
-names(plot34) <- c("Plotcode", "ba_ha3", "ba_ha4", "dens3", "dens4", "ABdead34", "ABdeadpres34", "ABdeadabs34", "biotic_low4",
+names(plot34) <- c("Plotcode", "ba_ha3", "ba_ha4", "dens3", "dens4", "ABdead34", "ABdeadpres34", "ABdeadabs34", "biotic4_low",
                    "biotic4_mid", "biotic4_high", "biotic4", "fire4_low", "fire4_mid", "fire4_high", "fire4", "ABcut34", "mdbh3", "mdbh4")
 
 plot234 <- merge(plot23, plot34, by="Plotcode", all.x = T)
 sum(is.na(plot234))
+
+###diversidad estructural 
+cvdbh2 <- do.call(data.frame, aggregate(dbhini~ Plotcode, data = tree23, FUN = function(x) c(mn = mean(x), sd = sd(x))))
+names(cvdbh2) <- c("Plotcode", "mdbh2", "sddbh2")
+cvdbh2[is.na(cvdbh2$sddbh2), "sddbh2"] <- 0
+
+cvdbh3 <- do.call(data.frame, aggregate(dbhfin~ Plotcode, data = tree23, FUN = function(x) c(mn = mean(x), sd = sd(x))))
+names(cvdbh3) <- c("Plotcode", "mdbh3", "sddbh3")
+cvdbh3[is.na(cvdbh3$sddbh3), "sddbh3"] <- 0
+
+cvdbh4 <- do.call(data.frame, aggregate(dbhfin~ Plotcode, data = tree34, FUN = function(x) c(mn = mean(x), sd = sd(x))))
+names(cvdbh4) <- c("Plotcode", "mdbh4", "sddbh4")
+cvdbh4[is.na(cvdbh4$sddbh4), "sddbh4"] <- 0
+
+cvdbh <- merge(cvdbh2, cvdbh3, by="Plotcode", all.x = T)
+cvdbh <- merge(cvdbh, cvdbh4, by="Plotcode", all.x = T)
+cvdbh$cvdbh2 <- cvdbh$sddbh2/cvdbh$mdbh2
+cvdbh$cvdbh3 <- cvdbh$sddbh3/cvdbh$mdbh3
+cvdbh$cvdbh4 <- cvdbh$sddbh4/cvdbh$mdbh4
+summary(cvdbh$cvdbh4)
+cvdbh[is.na(cvdbh$cvdbh2), "cvdbh2"] <- 0
+cvdbh[is.na(cvdbh$cvdbh3), "cvdbh3"] <- 0
+cvdbh[is.na(cvdbh$cvdbh4), "cvdbh4"] <- 0
+
+cvdbh <- cvdbh[, c("Plotcode", "cvdbh2", "cvdbh3", "cvdbh4")]
+
+plot234 <- merge(plot234, cvdbh, by="Plotcode", all.x = T)
+sum(is.na(plot234))
+
+
+###coordenadas
+coordenadas <- read.csv2("data/coordenadas_abiertas.csv")
+
+#transformo las coordenadas de utm a lat lon
+library(sf)
+library(dplyr)
+library(tidyverse)
+data_utm <- st_as_sf(x=coordenadas,
+                     coords = c("CX", "CY"),
+                     crs = "+proj=utm +zone=30 +ellps=intl +units=m +no_defs")
+
+data_latlon<- st_transform(
+  data_utm,
+  "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+
+latlon <- data_latlon %>%
+  ungroup() %>% 
+  mutate(CX = unlist(map(data_latlon$geometry, 1)),
+         CY = unlist(map(data_latlon$geometry, 2))) %>% 
+  as_tibble() %>% 
+  dplyr::select(!geometry)
+
+latlon <- latlon[, c("PLOTCODE", "CX", "CY")]
+names(latlon) <- c("Plotcode", "lon", "lat")
+latlon <- latlon[!duplicated(latlon$Plotcode), ]
+
+#merge con la base de datos principal
+plot234 <- merge(plot234, latlon, by="Plotcode", all.x = T)
+sum(is.na(plot234$lat)) ##no hay NAs, no perdemos datos :D
 
 
 ##temperatura y precipitacion
