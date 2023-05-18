@@ -88,31 +88,95 @@ tree34 <- merge(tree34, cut34, by="Plotcode", all.x = T)
 sum(is.na(tree34$Cut34)) #No hay NAs
 tree34$ABcut <- ifelse(tree34$Cut34==1, tree34$ABdeadabs, 0)
 
+
+##AB de pinos y quercineas x IFN
+table(tree23$sppcompa)
+pinos23 <- tree23[tree23$sppcompa %in% c(
+  "21", "22", "23", "24", "25", "26", "27", "28", "29"),]
+quercus23 <- tree23[tree23$sppcompa %in% c(
+  "41", "42", "43", "44", "45", "46", "47", "48", "49", "243"), ]
+pinos34 <- tree34[tree34$sppcompa %in% c(
+  "21", "22", "23", "24", "25", "26", "27", "28", "29"),]
+quercus34 <- tree34[tree34$sppcompa %in% c(
+  "41", "42", "43", "44", "45", "46", "47", "48", "49", "243"), ]
+
+
+ABpinus23 <- aggregate(cbind(ABm2haini) ~ Plotcode, data = pinos23, FUN = sum, na.rm = F)
+names(ABpinus23) <- c("Plotcode", "ABpinus2")
+ABpinus34 <- aggregate(cbind(ABm2haini, ABm2hafin) ~ Plotcode, data = pinos34, FUN = sum, na.rm = F)
+names(ABpinus34) <- c("Plotcode", "ABpinus3", "ABpinus4")
+ABpinus <- merge(ABpinus23, ABpinus34, by="Plotcode", all = T)
+ABpinus[is.na(ABpinus)] <- 0
+sum(is.na(ABpinus))
+
+
+ABquercus23 <- aggregate(cbind(ABm2haini) ~ Plotcode, data = quercus23, FUN = sum, na.rm = F)
+names(ABquercus23) <- c("Plotcode", "ABquercus2")
+ABquercus34 <- aggregate(cbind(ABm2haini, ABm2hafin) ~ Plotcode, data = quercus34, FUN = sum, na.rm = F)
+names(ABquercus34) <- c("Plotcode", "ABquercus3", "ABquercus4")
+ABquercus <- merge(ABquercus23, ABquercus34, by="Plotcode", all = T)
+ABquercus[is.na(ABquercus)] <- 0
+sum(is.na(ABquercus$ABquercus4))
+
+
+##Evergreen x deciduous
+dec23 <- tree23[tree23$sppcompa %in% c("41", "42", "43", "44", "47", "48", "49", "243"), ]
+dec34 <- tree34[tree34$sppcompa %in% c("41", "42", "43", "44", "47", "48", "49", "243"),]
+
+eve23 <- tree23[tree23$sppcompa %in% c("45", "46"), ]
+eve34 <- tree34[tree34$sppcompa %in% c("45", "46"), ]
+
+ABdec23 <- aggregate(cbind(ABm2haini) ~ Plotcode, data = dec23, FUN = sum, na.rm = F)
+names(ABdec23) <- c("Plotcode", "ABdec2")
+ABdec34 <- aggregate(cbind(ABm2haini, ABm2hafin) ~ Plotcode, data = dec34, FUN = sum, na.rm = F)
+names(ABdec34) <- c("Plotcode", "ABdec3", "ABdec4")
+ABdec <- merge(ABdec23, ABdec34, by="Plotcode", all = T)
+ABdec[is.na(ABdec)] <- 0
+sum(is.na(ABdec$ABdec2))
+
+ABeve23 <- aggregate(cbind(ABm2haini) ~ Plotcode, data = eve23, FUN = sum, na.rm = F)
+names(ABeve23) <- c("Plotcode", "ABeve2")
+ABeve34 <- aggregate(cbind(ABm2haini, ABm2hafin) ~ Plotcode, data = eve34, FUN = sum, na.rm = F)
+names(ABeve34) <- c("Plotcode", "ABeve3", "ABeve4")
+ABeve <- merge(ABeve23, ABeve34, by="Plotcode", all = T)
+ABeve[is.na(ABeve)] <- 0
+sum(is.na(ABeve$ABeve2))
+
+ABspp <- list(ABpinus, ABquercus, ABeve, ABdec)
+ABspp <- Reduce(function(x, y) merge(x, y, all=TRUE), ABspp) 
+ABspp[is.na(ABspp)] <- 0
+
 ##agrego a nivel plot (por partes porque para el dbh hago la media)
 plot23 <- aggregate(cbind(ABm2haini, densini, ABdead, ABdeadpres, ABdeadabs, biotic3_low, biotic3_mid, biotic3_high, 
                             biotic3, fire3_low, fire3_mid, fire3_high, fire3, ABcut) ~ Plotcode, data = tree23, FUN = sum, na.rm = F)
 
 dbh23 <- aggregate(cbind(dbhini) ~ Plotcode, data = tree23, FUN=mean, na.rm = F)
 
-plot23 <- merge(plot23, dbh23, by="Plotcode", all.x = T)
+plot23 <- merge(plot23, dbh23, by="Plotcode", all = T)
 names(plot23)
 
 names(plot23) <- c("Plotcode", "ba_ha2", "dens2", "ABdead23", "ABdeadpres23", "ABdeadabs23", "biotic_low3",
                    "biotic3_mid", "biotic3_high", "biotic3", "fire3_low", "fire3_mid", "fire3_high", "fire3", "ABcut23", "mdbh2")
+
 
 plot34 <- aggregate(cbind(ABm2haini, ABm2hafin, densini, densfin, ABdead, ABdeadpres, ABdeadabs, biotic4_low, biotic4_mid, biotic4_high, 
                           biotic4, fire4_low, fire4_mid, fire4_high, fire4, ABcut) ~ Plotcode, data = tree34, FUN = sum, na.rm = F)
 
 dbh34 <- aggregate(cbind(dbhini, dbhfin) ~ Plotcode, data = tree34, FUN=mean, na.rm = F)
 
-plot34 <- merge(plot34, dbh34, by="Plotcode", all.x = T)
+plot34 <- merge(plot34, dbh34, by="Plotcode", all= T)
 
 names(plot34)
 names(plot34) <- c("Plotcode", "ba_ha3", "ba_ha4", "dens3", "dens4", "ABdead34", "ABdeadpres34", "ABdeadabs34", "biotic4_low",
                    "biotic4_mid", "biotic4_high", "biotic4", "fire4_low", "fire4_mid", "fire4_high", "fire4", "ABcut34", "mdbh3", "mdbh4")
 
+
 plot234 <- merge(plot23, plot34, by="Plotcode", all.x = T)
 sum(is.na(plot234))
+
+plot234 <- merge(plot234, ABspp, by="Plotcode", all.x = F)
+sum(is.na(plot234))
+
 
 ###diversidad estructural 
 cvdbh2 <- do.call(data.frame, aggregate(dbhini~ Plotcode, data = tree23, FUN = function(x) c(mn = mean(x), sd = sd(x))))
