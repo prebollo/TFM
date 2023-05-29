@@ -27,4 +27,5 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 data
-Figures
+figures
+other
