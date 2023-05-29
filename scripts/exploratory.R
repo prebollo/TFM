@@ -7,7 +7,7 @@ library(GGally)
 library(ggcorrplot)
 library(ragg)
 
-
+###correlations
 vexp <- dat[, 5:14]
 corr <- round(cor(vexp), 2)
 
@@ -28,7 +28,14 @@ plot_correlation <- ggcorrplot(
         legend.title = element_text(size = 12))
 plot_correlation
 
-
 ggsave("correlation.jpg",plot_correlation, dpi = 900, units = "cm", width = 16, height =16, limitsize = F)
+
+
+##hist
+par(mfrow=c(1,2))
+hist(dat$ABr, main="Ratio changes in \nbasal area")
+hist(log(dat$ABr), main="LogRatio changes \nin basal area")
+dev.off()
+
 
 
