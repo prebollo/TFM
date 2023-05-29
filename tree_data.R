@@ -312,9 +312,12 @@ minSPEI <- na.omit(minSPEI)
 plot234i <- merge(plot234, minSPEI, by="Plotcode", all.x = T)
 sum(is.na(plot234i$SPEI4)) ###Pierdo 3707 plots con los datos de SPEI
 plot234 <- na.omit(plot234i) ##En total tengo 12410 plots con todos los datos (a falta de diversidad)
+plot234 <- plot234[!is.infinite(plot234$avgMinTempAbs),]
 sum(is.na(plot234))
 
 plot234$perc_pinquer2 <- ((plot234$ABpinus2+plot234$ABquercus2)/plot234$ba_ha2)*100
+plot234[is.na(plot234$perc_pinquer2), "perc_pinquer2"] <- 0
+
 plot234 <- plot234[plot234$perc_pinquer2>=75, ]
 
 plot234$ABr_pinus23 <- (plot234$ABpinus3+0.1)/(plot234$ABpinus2+0.1)
@@ -322,14 +325,15 @@ plot234$ABr_pinus34 <- (plot234$ABpinus4+0.1)/(plot234$ABpinus3+0.1)
 
 plot234$ABr_quercus23 <- (plot234$ABquercus3+0.1)/(plot234$ABquercus2+0.1)
 plot234$ABr_quercus34 <- (plot234$ABquercus4+0.1)/(plot234$ABquercus3+0.1)
+sum(is.na(plot234))
 
 write.csv(plot234, "data_plot234.csv")
 
 
-Pinus <- rep.int("Pinus", 10788)
-Quercus <- rep.int("Quercus", 10788)
-IFN23 <- rep.int("IFN23", 10788)
-IFN34 <- rep.int("IFN34", 10788)
+Pinus <- rep.int("Pinus", 10272)
+Quercus <- rep.int("Quercus", 10272)
+IFN23 <- rep.int("IFN23", 10272)
+IFN34 <- rep.int("IFN34", 10272)
 
 Plotcode <- c(plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode)
 IFNcode <- c(IFN23, IFN34, IFN23, IFN34)
