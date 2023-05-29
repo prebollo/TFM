@@ -159,6 +159,7 @@ names(plot23) <- c("Plotcode", "ba_ha2", "dens2", "ABdead23", "ABdeadpres23", "A
                    "biotic3_mid", "biotic3_high", "biotic3", "fire3_low", "fire3_mid", "fire3_high", "fire3", "ABcut23", "mdbh2")
 
 
+
 plot34 <- aggregate(cbind(ABm2haini, ABm2hafin, densini, densfin, ABdead, ABdeadpres, ABdeadabs, biotic4_low, biotic4_mid, biotic4_high, 
                           biotic4, fire4_low, fire4_mid, fire4_high, fire4, ABcut) ~ Plotcode, data = tree34, FUN = sum, na.rm = F)
 
@@ -282,6 +283,7 @@ SPEI4$IFN <- NULL
 ###Faltan los datos de CyL para IFN4, lo tengo en otros datos aparte
 
 CyL <- read.csv2("data/climaifn_CyL.csv")
+CyL$balhid10_SUM
 
 CyL <- CyL[, c("plotcode", "IFN", "minSPEI_AVG")]
 sum(is.na(CyL$minSPEI_AVG))
@@ -309,8 +311,44 @@ minSPEI <- na.omit(minSPEI)
 #cruzo los datos a la base de datos principal
 plot234i <- merge(plot234, minSPEI, by="Plotcode", all.x = T)
 sum(is.na(plot234i$SPEI4)) ###Pierdo 3707 plots con los datos de SPEI
-plot234 <- na.omit(plot234i) ##En total tengo 13542 plots con todos los datos (a falta de diversidad)
+plot234 <- na.omit(plot234i) ##En total tengo 12410 plots con todos los datos (a falta de diversidad)
+sum(is.na(plot234))
+
+plot234$perc_pinquer2 <- ((plot234$ABpinus2+plot234$ABquercus2)/plot234$ba_ha2)*100
+plot234 <- plot234[plot234$perc_pinquer2>=75, ]
+
+plot234$ABr_pinus23 <- (plot234$ABpinus3+0.1)/(plot234$ABpinus2+0.1)
+plot234$ABr_pinus34 <- (plot234$ABpinus4+0.1)/(plot234$ABpinus3+0.1)
+
+plot234$ABr_quercus23 <- (plot234$ABquercus3+0.1)/(plot234$ABquercus2+0.1)
+plot234$ABr_quercus34 <- (plot234$ABquercus4+0.1)/(plot234$ABquercus3+0.1)
 
 write.csv(plot234, "data_plot234.csv")
 
+
+Pinus <- rep.int("Pinus", 10788)
+Quercus <- rep.int("Quercus", 10788)
+IFN23 <- rep.int("IFN23", 10788)
+IFN34 <- rep.int("IFN34", 10788)
+
+Plotcode <- c(plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode)
+IFNcode <- c(IFN23, IFN34, IFN23, IFN34)
+spp <- c(Pinus, Pinus, Quercus, Quercus)
+ABr <- c(plot234$ABr_pinus23, plot234$ABr_pinus34, plot234$ABr_quercus23, plot234$ABr_quercus34) 
+ba_ha <- c(plot234$ba_ha2, plot234$ba_ha3, plot234$ba_ha2, plot234$ba_ha3)
+dens <- c(plot234$dens2, plot234$dens3, plot234$dens2, plot234$dens3)
+mdbh <- c(plot234$mdbh2, plot234$mdbh3, plot234$mdbh2, plot234$mdbh3)
+mean_Temp <- c(plot234$avgMeanTemp, plot234$avgMeanTemp, plot234$avgMeanTemp, plot234$avgMeanTemp)
+avgPrcp <- c(plot234$avgPrcp, plot234$avgPrcp, plot234$avgPrcp, plot234$avgPrcp)
+manag <- c(plot234$ABcut23, plot234$ABcut34, plot234$ABcut23, plot234$ABcut34) 
+fire <- c(plot234$fire3, plot234$fire4, plot234$fire3, plot234$fire4)
+pest <- c(plot234$biotic3, plot234$biotic4, plot234$biotic3, plot234$biotic4)
+drought <- c(plot234$SPEI3, plot234$SPEI4, plot234$SPEI3, plot234$SPEI4)
+cvdbh <- c(plot234$cvdbh2, plot234$cvdbh3, plot234$cvdbh2, plot234$cvdbh3)
+
+data_model <- data.frame(Plotcode, IFNcode, spp, ABr, ba_ha, dens, mdbh, mean_Temp, avgPrcp,
+                         manag, fire, pest, drought, cvdbh)
+
+
+write.csv(data_model, "data_model.csv")
 
