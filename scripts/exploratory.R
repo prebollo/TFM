@@ -37,5 +37,3 @@ hist(dat$ABr, main="Ratio changes in \nbasal area")
 hist(log(dat$ABr), main="LogRatio changes \nin basal area")
 dev.off()
 
-
-
