@@ -498,3 +498,7 @@ data_model <- data.frame(Plotcode, IFNcode, group, ABr, ABr_plot, ba_ha, dens, m
 
 write.csv(data_model, "data_model.csv")
 
+
+
+
+
