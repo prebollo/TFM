@@ -1,10 +1,12 @@
 tree234 <- read.csv("data/tree234_plotscomparable234.csv")
+
+tree234 <- tree234[tree234$Cla=="A", ]
+tree234 <- tree234[tree234$Subclase== 1, ]
 str(tree234)
 table(tree234$Provincia) ##esta castilla leon
 
 ###Los NAs de estas variables son en realidad 0.
 ###Asumimos que los NAs del Agente causante del daño son arboles sin daño
-
 tree234[is.na(tree234$Agente_fin), "Agente_fin"] <- 100 ##sin daños
 tree234[is.na(tree234$Agente_ini), "Agente_ini"] <- 0
 tree234[is.na(tree234$densini), "densini"] <- 0
@@ -21,8 +23,11 @@ tree234[is.na(tree234$ABdeadabs), "ABdeadabs"] <- 0
 tree234[is.na(tree234$Importancia_fin), "Importancia_fin"] <- 0 ##coincide con el numero de arboles sin daños en IFN3
 table(tree234$sppcompa)
 
-##Quito exoticas (eucalipto, chopos y radiata)
-tree234 <- tree234[!tree234$sppcompa%in% c(28, 51, 52, 58, 258, 60, 61, 62, 63, 64), ]
+##Quito PLOTS con especies exoticas (eucalipto, chopos y radiata)
+exoticas <- tree234[tree234$sppcompa%in% c(28, 51, 52, 58, 258, 60, 61, 62, 63, 64), ]
+"%ni%" <- Negate("%in%")
+tree234 <- tree234[tree234$Plotcode %ni% c(exoticas$Plotcode), ]
+table(tree234$sppcompa) ##Funciona, ya no hay codigos de estas especies
 
 ##cambio los Q. suber a su codigo (046) y el P. pinaster (026)
 tree234$sppcompa[tree234$sppcompa%in% c(646, 746, 846, 946)] <- 46
@@ -34,7 +39,8 @@ tree234$sppcompa <- str_pad(tree234$sppcompa, 3, pad = "0")
 
 ##para clasificar especies en nleve, bdec o beve
 species <- read.csv("data/species.csv")
-species <- species[,c("Code3", "Tipo")]
+
+species <- species[,c("Code", "Tipo")]
 names(species) <- c("sppcompa", "type")
 species <- na.omit(species)
 
@@ -42,18 +48,21 @@ species <- na.omit(species)
 sppcompa <- c(014, 081, 082, 084, 087, 088, 089, 389, 469, 489, 678)
 type <- c("nleve", "bleve", "bleve", "bleve", "bleve", "bleve", "bleve", "bleve", "bleve", "bleve", "bldec")
 speciesi <- data.frame(sppcompa, type)
-speciesi$sppcompa <- str_pad(speciesi$sppcompa, 3, pad = "0")
 species <- rbind(species,speciesi)
-species <- na.omit(species)
+species$sppcompa <- str_pad(species$sppcompa, 3, pad = "0")
+sum(is.na(species))
+
 tree234 <- merge(tree234, species, by="sppcompa", all.x = T)
-tree234 <- tree234[!is.na(tree234$type), ] ##Quito 30 arboles (059, 069)
-sum(is.na(tree234$type))
+sum(is.na(tree234$sppcompa)) 
+sum(is.na(tree234$type)) #Hay 10 NAs
+tree234 <- tree234[!is.na(tree234$type), ]
+sum(is.na(tree234$sppcompa))
 
 ###preparo los datos por separado 23 y 34 (luego los vuelvo a unir para trabajar con IFN234)
-###es porque asi me aclaro yo mejor
 tree23 <- tree234[tree234$IFNcode=="IFN23", ]
 tree34 <- tree234[tree234$IFNcode=="IFN34", ]
-
+length(unique(tree34$Plotcode))
+length(unique(tree23$Plotcode))
 
 ##Clasificamos los daños funcion de la importancia (baja, media y alta) por si acaso...
 ##incendios
@@ -241,25 +250,36 @@ names(plot34)
 names(plot34) <- c("Plotcode", "ba_ha3", "ba_ha4", "dens3", "dens4", "ABdead34", "ABdeadpres34", "ABdeadabs34", "biotic4_low",
                    "biotic4_mid", "biotic4_high", "biotic4", "fire4_low", "fire4_mid", "fire4_high", "fire4", "ABcut34", "mdbh3", "mdbh4")
 
-
 plot234 <- merge(plot23, plot34, by="Plotcode", all.x = T)
-plot234 <- na.omit(plot234)
+plot234 <- na.omit(plot234) #Hay un plot con todo NAs en IFN4
 
-plot234 <- merge(plot234, ABspp, by="Plotcode", all.x = F)
+plot234 <- merge(plot234, ABspp, by="Plotcode", all.x = T)
 sum(is.na(plot234))
 
 
+###Cogemos plots donde hubiera al menos 1 arbol en el IFN2
+plot234 <- plot234[plot234$ba_ha2 !=0, ] ##Se pierden 521 plots
+
 
 ##diversidad de shannon
-library(dplyr)
-datos_shannon23 <- tree23[, c("Plotcode", "sppcompa")]
 
-Index23 <- list()
-Index23[['H']] <- datos_shannon23 %>%
+##Calculo la diversidad de shannon para IFN2, IFN3 e IFN4.
+##para IFN3 e IFN4, solo la calculo con los arboles vivos
+##los arboles muertos tienen codigo 999 en la especie
+
+datos_shannon2 <- tree23[, c("Plotcode", "especie_ini")]
+
+##Quito los NAs, que son arboles que en IFN2 no estaban así que calculo la diversidad con los que estan
+datos_shannon2 <- na.omit(datos_shannon2)
+
+library(dplyr)
+
+Index2 <- list()
+Index2[['H']] <- datos_shannon2 %>%
   group_by(Plotcode) %>%
   summarise(
     total = n(),
-    specie =sppcompa)%>% 
+    specie =especie_ini)%>% 
   group_by(Plotcode, specie) %>%
   summarise(Plotcode = unique(Plotcode),
     sp = n()/total)%>%
@@ -269,19 +289,27 @@ Index23[['H']] <- datos_shannon23 %>%
   mutate(PlogP = sp*logP) %>%
   group_by(Plotcode)%>%
   summarise(
-    H_23 = -sum(PlogP))
+    H_2 = -sum(PlogP))
 
-shannon_23 <- as.data.frame(Index23) 
-names(shannon_23) <- c("Plotcode", "H_23")
+shannon_2 <- as.data.frame(Index2) 
+names(shannon_2) <- c("Plotcode", "H_2")
 
-datos_shannon34 <- tree34[, c("Plotcode", "sppcompa")]
 
-Index34 <- list()
-Index34[['H']] <- datos_shannon34 %>%
+
+#tengo que quitar los arboles muertos en IFN3. Para ello voy a quitar todos los arboles que en el dbh inicial sea 0
+#(corresponden al dbh del IFN3) 
+#Me acabo de dar cuenta de que para el periodo IFN34, el dbhini siempre es mayor de 0... 
+#Marcan los arboles muertos entre 2-3 y para el periodo 3-4 se quitan de los datos
+#Asi que calculo shannon con todos los arboles del 3 para el periodo 3-4 (todos estan vivos)
+
+datos_shannon3 <- tree34[, c("Plotcode", "especie_ini")]
+
+Index3 <- list()
+Index3[['H']] <- datos_shannon3 %>%
   group_by(Plotcode) %>%
   summarise(
     total = n(),
-    specie =sppcompa)%>% 
+    specie =especie_ini)%>% 
   group_by(Plotcode, specie) %>%
   summarise(Plotcode = unique(Plotcode),
             sp = n()/total)%>%
@@ -291,16 +319,49 @@ Index34[['H']] <- datos_shannon34 %>%
   mutate(PlogP = sp*logP) %>%
   group_by(Plotcode)%>%
   summarise(
-    H_34 = -sum(PlogP))
+    H_3 = -sum(PlogP))
 
-shannon_34 <- as.data.frame(Index34) 
-names(shannon_34) <- c("Plotcode", "H_34")
-shannon <- merge(shannon_23, shannon_34, by="Plotcode", all.x = T)
-shannon <- na.omit(shannon)
+shannon_3 <- as.data.frame(Index3) 
+names(shannon_3) <- c("Plotcode", "H_3")
+
+
+##Aqui si que tengo que quitar los muertos entre el periodo 3-4
+datos_shannon4 <- tree34[, c("Plotcode", "especie_fin", "state")]
+datos_shannon4 <- datos_shannon4[!datos_shannon4$state %in% c("MA", "MP"), ]
+
+##Asi calculo la diversidad de shannon solo de los arboles vivos en IFN4
+
+Index4 <- list()
+Index4[['H']] <- datos_shannon4 %>%
+  group_by(Plotcode) %>%
+  summarise(
+    total = n(),
+    specie =especie_fin)%>% 
+  group_by(Plotcode, specie) %>%
+  summarise(Plotcode = unique(Plotcode),
+            sp = n()/total)%>%
+  group_by(Plotcode, specie)%>%
+  distinct()%>%
+  mutate(logP = log10(sp)) %>%
+  mutate(PlogP = sp*logP) %>%
+  group_by(Plotcode)%>%
+  summarise(
+    H_4 = -sum(PlogP))
+
+shannon_4 <- as.data.frame(Index4) 
+names(shannon_4) <- c("Plotcode", "H_4")
+
+shannon <- merge(shannon_2, shannon_3, by="Plotcode", all.x=T)
+shannon <- merge(shannon, shannon_4, by="Plotcode", all.x = T)
+sum(is.na(shannon)) 
+
+#Hay NAs en el IFN4 porque son plots en los que se han muerto todos los arboles y no hay individuos... 
+#Pongo diversidad=0 o dejo el NA
 
 plot234 <- merge(plot234, shannon, by="Plotcode", all.x = T)
+sum(is.na(plot234$H_4))
 sum(is.na(plot234))
- 
+
 ###diversidad estructural 
 cvdbh2 <- do.call(data.frame, aggregate(dbhini~ Plotcode, data = tree23, FUN = function(x) c(mn = mean(x), sd = sd(x))))
 names(cvdbh2) <- c("Plotcode", "mdbh2", "sddbh2")
@@ -330,7 +391,7 @@ plot234 <- merge(plot234, cvdbh, by="Plotcode", all.x = T)
 sum(is.na(plot234))
 
 
-###coordenadas
+###coordenadas por si queremos hacer un mapa o cualquier historia
 coordenadas <- read.csv2("data/coordenadas_abiertas.csv")
 
 #transformo las coordenadas de utm a lat lon
@@ -358,7 +419,7 @@ latlon <- latlon[!duplicated(latlon$Plotcode), ] #Hay duplicadas pero las coorde
 
 #merge con la base de datos principal
 plot234 <- merge(plot234, latlon, by="Plotcode", all.x = T)
-sum(is.na(plot234)) ##no hay NAs, no perdemos datos :D
+sum(is.na(plot234)) ##no perdemos datos :D
 
 
 ##temperatura y precipitacion
@@ -368,7 +429,7 @@ clima <- clima_medio[clima_medio$PLOTCODE%in%plot234$Plotcode, c("PLOTCODE", "av
                                                                  "avgMinTempAbs", "avgMaxTemp", 
                                                                  "avgMaxTempAbs", "avgMeanTemp", "avgBalhid")]
 
-clima <- na.omit(clima) ##se pierden 4 parcelas por el camino
+clima <- na.omit(clima) ##se pierde 1 parcela por el camino
 sum(is.na(clima))
 names(clima)
 names(clima) <- c("Plotcode", "avgPrcp", "avgMinTemp", "avgMinTempAbs", 
@@ -376,14 +437,15 @@ names(clima) <- c("Plotcode", "avgPrcp", "avgMinTemp", "avgMinTempAbs",
 clima <- lapply(clima, as.numeric)
 clima <- as.data.frame(clima)
 str(clima)
-clima <- clima[!duplicated(clima$Plotcode), ] #Hay parcelas duplicadas pero los valores de las variables coinciden
+clima <- clima[!duplicated(clima$Plotcode), ] #Hay parcelas duplicadas en las que los valores de las variables coinciden
 clima$PET <- clima$avgPrcp-clima$avgBalhid
 clima$WAI <- (clima$PET-clima$avgPrcp)/clima$PET
 sum(is.na(clima))
 
 #uno el clima a la base de datos principal
 plot234 <- merge(plot234, clima, by="Plotcode", all.x = T)
-plot234 <- na.omit(plot234) #Quito los NAs de las parcelas que se pierden en los datos del clima (807 plots)
+plot234 <- plot234[!is.na(plot234$WAI), ] ##Perdemos 728 plots que no tienen datos de clima
+
 
 ##sequias (SPEI)
 climaifn <- read.csv2("data/climaifn.csv")
@@ -422,15 +484,15 @@ SPEI2 <- SPEI2[!duplicated(SPEI2$Plotcode), ]
 SPEI3 <- SPEI3[!duplicated(SPEI3$Plotcode), ]
 SPEI4 <- SPEI4[!duplicated(SPEI4$Plotcode), ]
 
-minSPEI <- merge(SPEI3, SPEI2, by="Plotcode", all.x = T) #empiezo por el 3 porque es el que mas plots tiene
+minSPEI <- merge(SPEI3, SPEI2, by="Plotcode", all.x = T)
 minSPEI <- merge(minSPEI, SPEI4, by="Plotcode", all.x = T)
 minSPEI <- na.omit(minSPEI)
 
 #cruzo los datos a la base de datos principal
 plot234i <- merge(plot234, minSPEI, by="Plotcode", all.x = T)
-sum(is.na(plot234i$SPEI4)) ###Pierdo 3676 plots con los datos de SPEI
-plot234 <- na.omit(plot234i) ##En total tengo 12410 plots con todos los datos (a falta de diversidad)
-plot234 <- plot234[!is.infinite(plot234$avgMinTempAbs),]
+sum(is.na(plot234i$SPEI2)) ###Pierdo 3138 plots con los datos de SPEI
+plot234 <- plot234i[!is.na(plot234i$SPEI4),] ##En total tengo 11276 plots con todos los datos (a falta de diversidad)
+plot234 <- plot234[!is.infinite(plot234$avgMinTempAbs),] ##Tambien hay infinitos... se quedan en 11171 plots
 sum(is.na(plot234))
 
 
@@ -465,11 +527,11 @@ sum(is.na(plot234))
 write.csv(plot234, "data_plot234.csv")
 
 
-IFN23 <- rep.int("IFN23", 12743)
-IFN34 <- rep.int("IFN34", 12743)
-nleve <- rep.int("nleve", 12743)
-bleve <- rep.int("bleve", 12743)
-bldec <- rep.int("bldec", 12743)
+IFN23 <- rep.int("IFN23", 11171)
+IFN34 <- rep.int("IFN34", 11171)
+nleve <- rep.int("nleve", 11171)
+bleve <- rep.int("bleve", 11171)
+bldec <- rep.int("bldec", 11171)
 
 
 Plotcode <- c(plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode)
