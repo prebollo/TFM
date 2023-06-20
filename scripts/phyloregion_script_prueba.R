@@ -1,5 +1,7 @@
 tree <- read.tree("C:/Users/veruk/OneDrive - Harvard University/data_forestrestoration/Plant_diversity/Daru_etal_data/DATA/phylogeny/WRLD_phylo.tre")
 
+tree$tip.label
+
 matrices <- taxon3 %>%
   mutate(species = str_replace_all(taxon_clean_bdc, " ", "_")) %>%
   filter(rescaled_measurement > 0) %>%
