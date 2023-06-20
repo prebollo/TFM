@@ -27,7 +27,11 @@ table(tree234$sppcompa)
 exoticas <- tree234[tree234$sppcompa%in% c(28, 51, 52, 58, 258, 60, 61, 62, 63, 64), ]
 "%ni%" <- Negate("%in%")
 tree234 <- tree234[tree234$Plotcode %ni% c(exoticas$Plotcode), ]
+tree234 <- tree234[!tree234$genero_ini=="Eucalyptus", ]
+tree234 <- tree234[!tree234$genero_fin=="Eucalyptus", ]##se han colado unos cuantos pero estan ya fuera
 table(tree234$sppcompa) ##Funciona, ya no hay codigos de estas especies
+
+
 
 ##cambio los Q. suber a su codigo (046) y el P. pinaster (026)
 tree234$sppcompa[tree234$sppcompa%in% c(646, 746, 846, 946)] <- 46
@@ -224,6 +228,27 @@ sum(is.na(ABbldec))
 ABspp <- list(ABnleve, ABbldec, ABbleve)
 ABspp <- Reduce(function(x, y) merge(x, y, all=TRUE), ABspp) 
 ABspp[is.na(ABspp)] <- 0
+
+##write for phylogenetic diversity
+tree2 <- tree23[, c("especie_ini", "nombre_ini")]
+tree3 <- tree23[, c("especie_fin", "nombre_fin")]
+tree3 <- tree3[!duplicated(tree3$especie_fin), ]
+names(tree3) <- c("especie", "nombre_fin")
+names(tree2) <- c("especie", "nombre_ini")
+
+tree2i <- merge(tree2, tree3, by="especie", all.x=T)
+tree2ii <- tree2i[!duplicated(tree2i$especie), ]
+tree2ii$nombre <- ifelse(is.na(tree2ii$nombre_fin), tree2ii$nombre_ini, tree2ii$nombre_fin)
+tree2 <- tree2ii[, c("especie", "nombre")]
+names(tree2) <- c("especie_ini", "nombre2")
+
+tree23 <- merge(tree23, tree2, by="especie_ini", all.X=T)
+sum(is.na(tree23$nombre2))
+
+write.csv(tree23, "tree23.csv")
+write.csv(tree34, "tree34.csv")
+
+
 
 ##agrego a nivel plot (por partes porque para el dbh hago la media)
 plot23 <- aggregate(cbind(ABm2haini, densini, ABdead, ABdeadpres, ABdeadabs, biotic3_low, biotic3_mid, biotic3_high, 

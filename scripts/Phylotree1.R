@@ -18,8 +18,8 @@ setwd("E:/DROPBOX/D Drive from Stirling/3R_analysis/Alcala_2017/Proyecto_sevilla
 
 #load the files
 sw <- read.csv("Div_filogenetica/Sweeden_species_list.csv", header=T, sep = ",")
-es <- read.csv("data/Spain_species_list.csv", header=T, sep = "\t")
-es4 <- read.csv("data/Spain_species_list_ifn4.csv", header=T, sep = "\t") ### tiene dos especies menos que ifn2 y 3
+es <- read.csv("Div_filogenetica/Spain_species_list.csv", header=T, sep = "\t")
+es4 <- read.csv("Div_filogenetica/Spain_species_list_ifn4.csv", header=T, sep = "\t") ### tiene dos especies menos que ifn2 y 3
 
 View(es)
 #es <- clean_names(es)
@@ -271,18 +271,18 @@ str(swab_dfb)
 ##### IFN 2 #########
 
 ### Estas bases de datos tienen las abundancias para el total de parcelas, voy a extraer para las parcelas con las que voy a trabajar que son 14182
-ab2<- read.table(file="data/Abundances_alive_spain_ifn2_46prov_sept22.txt", header = TRUE, sep = "\t") ### actualizadas 05 sept
-ab3 <- read.table("data/Abundances_alive_spain_ifn3_46prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 130 sps
-ab4 <- read.table("data/Abundances_alive_spain_ifn4_31prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 129 sps
+ab2<- read.table(file="Abundances_alive_spain_ifn2_46prov_sept22.txt", header = TRUE, sep = "\t") ### actualizadas 05 sept
+ab3 <- read.table("Abundances_alive_spain_ifn3_46prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 130 sps
+ab4 <- read.table("Abundances_alive_spain_ifn4_31prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 129 sps
 View(ab2)
 ab2 <- tibble::rownames_to_column(ab2, "Plotcode")## convierto rowname en columna
 ab2$Plotcode<-gsub("X","",as.character(ab2$Plotcode)) ## elimino la X del principio del codigo de parcela
-View(ab2)
+View(ab2b)
 row.names(ab2)<- ab2$Plotcode
 
 ## de aqui voy a extraer las parcelas
 # Seleting the data file
-fd234 <- read.csv("data/FI_abun_ifn234_96sp_coord_disturbance_completo3_nona_08sept22.csv", header = TRUE, sep = ",", dec=",") 
+fd234 <- read.csv("FI_abun_ifn234_96sp_coord_disturbance_completo3_nona_08sept22.csv", header = TRUE, sep = ",", dec=",") 
 View(fd234)
 
 ab2f <- subset(ab2, (Plotcode %in%  fd234$ifn2_Plotcode))
@@ -359,9 +359,9 @@ write.csv(ab3_s_t, "Abundance_mat_div_filogenetic_spain_NFI3.csv")
 ##### IFN 4 #########
 
 ### Estas bases de datos tienen las abundancias para el total de parcelas, voy a extraer para las parcelas con las que voy a trabajar que son 14182
-ab2<- read.table(file="data/Abundances_alive_spain_ifn2_46prov_sept22.txt", header = TRUE, sep = "\t") ### actualizadas 05 sept
-ab3 <- read.table("data/Abundances_alive_spain_ifn3_46prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 130 sps
-ab4 <- read.table("data/Abundances_alive_spain_ifn4_31prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 129 sps
+ab2<- read.table(file="Abundances_alive_spain_ifn2_46prov_sept22.txt", header = TRUE, sep = "\t") ### actualizadas 05 sept
+ab3 <- read.table("Abundances_alive_spain_ifn3_46prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 130 sps
+ab4 <- read.table("Abundances_alive_spain_ifn4_31prov_sept22.txt", sep="\t", header=TRUE) # abundances ## leo de nuevo la bbdd ### 129 sps
 View(ab4)
 ab4 <- tibble::rownames_to_column(ab4, "Plotcode")## convierto rowname en columna
 ab4$Plotcode<-gsub("X","",as.character(ab4$Plotcode)) ## elimino la X del principio del codigo de parcela
@@ -370,7 +370,7 @@ row.names(ab4)<- ab4$Plotcode
 
 ## de aqui voy a extraer las parcelas
 # Seleting the data file
-fd234 <- read.csv("data/FI_abun_ifn234_96sp_coord_disturbance_completo3_nona_08sept22.csv", header = TRUE, sep = ",", dec=",") 
+fd234 <- read.csv("FI_abun_ifn234_96sp_coord_disturbance_completo3_nona_08sept22.csv", header = TRUE, sep = ",", dec=",") 
 View(fd234)
 
 ab4f <- subset(ab4, (Plotcode %in%  fd234$ifn2_Plotcode))
@@ -429,13 +429,12 @@ row.names(swab_ifn3) <- swab_ifn3$X
 swab_ifn3<- swab_ifn3[,-c(1)]
 View(swab_ifn3)
 
-sp_ifn2 <- read.csv("data/Abundance_mat_div_filogenetic_spain_NFI2.csv",  header=T)
+sp_ifn2 <- read.csv("Div_filogenetica/Abundance_mat_div_filogenetic_spain_NFI2.csv",  header=T, sep = "\t")
 View(sp_ifn2)
 row.names(sp_ifn2) <- sp_ifn2$X
 sp_ifn2<- sp_ifn2[,-c(1)]
 
-
-sp_ifn3 <- read.csv("data/Abundance_mat_div_filogenetic_spain_NFI3.csv",  header=T, sep = ",")
+sp_ifn3 <- read.csv("Div_filogenetica/Abundance_mat_div_filogenetic_spain_NFI3.csv",  header=T, sep = ",")
 View(sp_ifn3)
 row.names(sp_ifn3) <- sp_ifn3$X
 sp_ifn3<- sp_ifn3[,-c(1)]
@@ -471,17 +470,7 @@ View(pd3)
 write.csv(pd3, "Phylogenetic_div_sweeden_nfi3.csv")
 
 #### Spain ifn2   ##
-names(sp_ifn2) <- gsub("\\.", "_", names(sp_ifn2))
-names(phy_es$scenario.1$tip.label) <- gsub("\\.", "_", names(phy_es$scenario.1$tip.label))
-phy_es$scenario.1$tip.label <- str_replace_all(phy_es$scenario.1$tip.label,"\\.","_")
-table(phy_es$scenario.1$tip.label)
-summary(phy_es)
-root(phy_es$scenario.1)
-
-
-library(ape)
 pd_sp2 <- pd( sp_ifn2, phy_es$scenario.1, include.root=TRUE)
-summary(phy_es)
 
 #### Spain ifn3   ##
 pd_sp3 <- pd( sp_ifn3, phy_es$scenario.1, include.root=TRUE)
