@@ -105,3 +105,61 @@ dominance_shifts
 ggsave("dominance shifts.jpg",dominance_shifts, dpi = 900, units = "cm", width =40 , height =15, limitsize = F)
 
 
+SFI23 <- rep.int("23SFI", 11171)
+SFI34 <- rep.int("34SFI", 11171)
+nleve <- rep.int("nleve", 11171)
+bldec <- rep.int("bldec", 11171)
+bleve <- rep.int("bleve", 11171)
+
+ABr <- c(plot234$ABr_nleve23, plot234$ABr_nleve34, 
+         plot234$ABr_bldec23, plot234$ABr_bldec34,
+         plot234$ABr_bleve23, plot234$ABr_bleve34)
+group <- c(nleve, nleve, bldec, bldec, bleve, bleve)
+SFI <- c(SFI23, SFI34, SFI23, SFI34, SFI23, SFI34)
+
+ABratio <- data.frame(SFI, group, ABr)
+
+
+boxplot_ratio <- ggplot()+
+  geom_boxplot(data=ABratio, aes(x=SFI, y=ABr, fill=group), outlier.shape=NA)+
+  ylim(0.5, 1.8)+ ylab("Basal area ratio")+ geom_hline(yintercept = 1, linetype="dashed", size=.3)+
+  scale_fill_manual(name = "", values = c("bldec"="#6C3600", "bleve"="#C3B18A", "nleve"="#49934A"))+ 
+  xlab("")+ theme_bw()+ theme(panel.grid = element_blank(),
+                              legend.position = c(0.9, 0.85),
+                              legend.text = element_text(size = 16),
+                              axis.text = element_text(size = 14),
+                              axis.title = element_text(size = 18))
+boxplot_ratio
+
+ggsave("boxplots_ratio_shifts.jpg",boxplot_ratio, dpi = 900, units = "cm", width =20 , height =20, limitsize = F)
+
+
+SFI23 <- rep.int("23SFI", 11171)
+SFI34 <- rep.int("34SFI", 11171)
+nleve <- rep.int("nleve", 11171)
+bldec <- rep.int("bldec", 11171)
+bleve <- rep.int("bleve", 11171)
+
+
+ABsp <- c((plot234$AB_nleve2*-1), (plot234$AB_nleve3*-1), (plot234$AB_nleve4*-1),
+          plot234$AB_bldec2, plot234$AB_bldec3, plot234$AB_bldec4)
+group <- c(nleve, nleve, nleve, bldec, bldec, bldec)
+SFI <- c(SFI2, SFI3, SFI4, SFI2, SFI3, SFI4)
+
+ABsp <- data.frame(SFI, group, ABsp)
+summary(ABsp$ABsp)
+
+barplot_sp <- ggplot(data=ABsp, aes(x=SFI, y=ABsp, fill=group)) +
+  geom_bar(stat = "summary")+ geom_hline(yintercept = 0, linetype="dashed")+
+  scale_fill_manual(name = "", values = c("bldec"="#6C3600", "nleve"="#49934A"))+ 
+  scale_y_continuous(breaks = c(-6,-3, 0, 3, 6), labels =c(6, 3, 0, 3, 6))+
+  ylab("                  Basal area conifers                   Basal area broad-leaved deciduous")+
+  xlab("")+ theme_bw()+ theme(panel.grid.major = element_blank(),
+                              panel.grid.minor = element_line(color="grey"),
+                              legend.text = element_text(size = 16),
+                              axis.text = element_text(size = 14),
+                              axis.title = element_text(size = 18))
+barplot_sp
+
+ggsave("barplot_sp.jpg",barplot_sp, dpi = 900, units = "cm", width =20 , height =25, limitsize = F)
+
