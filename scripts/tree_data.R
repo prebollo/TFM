@@ -1,5 +1,6 @@
 tree234 <- read.csv("data/tree234_plotscomparable234.csv")
 
+
 tree234 <- tree234[tree234$Cla=="A", ]
 tree234 <- tree234[tree234$Subclase== 1, ]
 str(tree234)
@@ -65,7 +66,8 @@ sum(is.na(tree234$sppcompa))
 ###preparo los datos por separado 23 y 34 (luego los vuelvo a unir para trabajar con IFN234)
 tree23 <- tree234[tree234$IFNcode=="IFN23", ]
 tree34 <- tree234[tree234$IFNcode=="IFN34", ]
-length(unique(tree34$Plotcode))
+
+table(unique(tree34$nombre_ini))
 length(unique(tree23$Plotcode))
 
 ##Clasificamos los daños funcion de la importancia (baja, media y alta) por si acaso...

@@ -2,47 +2,71 @@ library(dplyr)
 library(fossil)
 library(tibble)
 
-tree23 <- read.csv("data/tree23.csv")
-table(tree23$nombre_ini)
-tree34 <- read.csv("data/tree34.csv")
-plot234 <- read.csv("data/data_plot234.csv")
+tree234 <- read.csv("data/tree234_plotscomparable234.csv")
+tree23 <- tree234[tree234$IFNcode=="IFN23", ]
+tree34 <- tree234[tree234$IFNcode=="IFN34", ]
+species2 <- read.csv("data/species_ifn2.csv")
+species2 <- species2[species2$especie_2!="Pinus spp.", ]
+tree23 <- merge(tree23, species2, by="especie_ini", all.x =T)
+tree23 <- tree23[!is.na(tree23$especie_2), ]
 
 ##abundance matrix
 #ifn2
-ab2 <- tree23 %>% group_by(Plotcode, .drop = FALSE) %>% count(nombre2)
-ab2 <- as.data.frame(ab2)
+abun2 <-  tree23 %>% group_by(Plotcode, especie_2, .drop = FALSE) %>%
+  summarise(ba2 = sum(ABm2haini))
+abun2 <- as.data.frame(abun2)
 
-abundance_ifn2 <- create.matrix(ab2,tax.name="nombre2", locality="Plotcode",
-                                time.col=NULL, time=NULL, abund=T, abund.col="n")
+abundance_ifn2 <- create.matrix(abun2, tax.name="especie_2", locality="Plotcode",
+                                time.col=NULL, time=NULL, abund=T, abund.col="ba2")
 
 abundance_ifn2 <- t(abundance_ifn2)
 abundance_ifn2 <- as.data.frame(abundance_ifn2)
 abundance_ifn2 <- rownames_to_column(abundance_ifn2, "Plotcode")
-abundance_ifn2 <- abundance_ifn2[abundance_ifn2$Plotcode %in% plot234$Plotcode, ]
 write.csv(abundance_ifn2, "ab_matrix2.csv")
 
 #ifn3
-ab3 <- tree34 %>% group_by(Plotcode, .drop = FALSE) %>% count(nombre_ini)
-ab3 <- as.data.frame(ab3)
+species3 <- read.csv("data/species_ifn3.csv")
+species3 <- species3[, c("especie_ini", "nombre_ini")]
+tree34$nombre_ini <- NULL
+tree34 <- merge(tree34, species3, by="especie_ini", all.x= T)
+tree34 <- tree34[!is.na(tree34$nombre_ini), ]
 
-abundance_ifn3 <- create.matrix(ab3,tax.name="nombre_ini", locality="Plotcode",
-                                time.col=NULL, time=NULL, abund=T, abund.col="n")
+abun3 <- tree34 %>% group_by(Plotcode, nombre_ini, .drop = FALSE) %>%
+  summarise(ba3 = sum(ABm2haini))
+
+abun3 <- as.data.frame(abun3)
+
+abundance_ifn3 <- create.matrix(abun3,tax.name="nombre_ini", locality="Plotcode",
+                                time.col=NULL, time=NULL, abund=T, abund.col="ba3")
 
 abundance_ifn3 <- t(abundance_ifn3)
 abundance_ifn3 <- as.data.frame(abundance_ifn3)
 abundance_ifn3 <- rownames_to_column(abundance_ifn3, "Plotcode")
-abundance_ifn3 <- abundance_ifn3[abundance_ifn3$Plotcode %in% plot234$Plotcode, ]
 write.csv(abundance_ifn3, "ab_matrix3.csv")
 
 #ifn4
-ab4 <- tree34 %>% group_by(Plotcode, .drop = FALSE) %>% count(nombre_fin)
-ab4 <- as.data.frame(ab4)
+species4 <- read.csv("data/species_ifn4.csv")
+species4 <- species4[, c("especie_fin", "nombre_fin")]
+tree34 <- tree234[tree234$IFNcode=="IFN34", ]
+tree34 <- tree34[!duplicated(tree34), ]
+tree34$especie_fin[tree34$especie_fin%in% c(646, 746, 846, 946)] <- 46
+tree34$especie_fin[tree34$especie_fin%in% c(626, 726, 826, 926)] <- 26
+tree34$nombre_fin <- NULL
+tree34 <- merge(tree34, species4, by="especie_fin", all.x= T)
+tree34 <- tree34i[!duplicated(tree34), ]
+sum(is.na(tree34$nombre_fin))
+tree34 <- tree34[!is.na(tree34$dbhfin),] ###estan muertos, no los cuento para la diversidad filo
+tree34 <- tree34[!is.na(tree34$especie_fin),] ##hay 77 arboles que descuadran pero son la mayoria eucaliptos y luego los voy a quitar anyways
 
-abundance_ifn4 <- create.matrix(ab4,tax.name="nombre_fin", locality="Plotcode",
-                                time.col=NULL, time=NULL, abund=T, abund.col="n")
+abun4 <- tree34 %>% group_by(Plotcode, nombre_fin, .drop = FALSE) %>%
+  summarise(ba4 = sum(ABm2hafin))
+
+abun4 <- as.data.frame(abun4)
+
+abundance_ifn4 <- create.matrix(abun4,tax.name="nombre_fin", locality="Plotcode",
+                                time.col=NULL, time=NULL, abund=T, abund.col="ba4")
 
 abundance_ifn4 <- t(abundance_ifn4)
 abundance_ifn4 <- as.data.frame(abundance_ifn4)
 abundance_ifn4 <- rownames_to_column(abundance_ifn4, "Plotcode")
-abundance_ifn4 <- abundance_ifn4[abundance_ifn4$Plotcode %in% plot234$Plotcode, ]
 write.csv(abundance_ifn4, "ab_matrix4.csv")
