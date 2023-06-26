@@ -71,10 +71,6 @@ nodelabels(round(branching.times(phy_es4$scenario.1), 1), cex = 0.8)
 phydist2 <- cophenetic.phylo(phy_es2$scenario.1)
 phydist2
 
-spp2_phy <- (phy_es2$scenario.1$tip.label)
-
-###################################################################
-#ifn2
 df2<-abun2[, phy_es2$scenario.1$tip.label]
 
 mpd_ifn2 <- ses.mpd(df2,phydist2, null.model = "taxa.labels", 

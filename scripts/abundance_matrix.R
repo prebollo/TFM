@@ -24,6 +24,7 @@ abundance_ifn2 <- as.data.frame(abundance_ifn2)
 abundance_ifn2 <- rownames_to_column(abundance_ifn2, "Plotcode")
 write.csv(abundance_ifn2, "ab_matrix2.csv")
 
+
 #ifn3
 species3 <- read.csv("data/species_ifn3.csv")
 species3 <- species3[, c("especie_ini", "nombre_ini")]
@@ -53,7 +54,7 @@ tree34$especie_fin[tree34$especie_fin%in% c(646, 746, 846, 946)] <- 46
 tree34$especie_fin[tree34$especie_fin%in% c(626, 726, 826, 926)] <- 26
 tree34$nombre_fin <- NULL
 tree34 <- merge(tree34, species4, by="especie_fin", all.x= T)
-tree34 <- tree34i[!duplicated(tree34), ]
+tree34 <- tree34[!duplicated(tree34), ]
 sum(is.na(tree34$nombre_fin))
 tree34 <- tree34[!is.na(tree34$dbhfin),] ###estan muertos, no los cuento para la diversidad filo
 tree34 <- tree34[!is.na(tree34$especie_fin),] ##hay 77 arboles que descuadran pero son la mayoria eucaliptos y luego los voy a quitar anyways
@@ -69,4 +70,4 @@ abundance_ifn4 <- create.matrix(abun4,tax.name="nombre_fin", locality="Plotcode"
 abundance_ifn4 <- t(abundance_ifn4)
 abundance_ifn4 <- as.data.frame(abundance_ifn4)
 abundance_ifn4 <- rownames_to_column(abundance_ifn4, "Plotcode")
-write.csv(abundance_ifn4, "ab_matrix4.csv")
+write.csv(abundance_ifn4, "data/ab_matrix4.csv")

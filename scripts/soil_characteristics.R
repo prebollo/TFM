@@ -7,49 +7,47 @@ library(terra)
 #Soil organic carbon in dg/kg - soc
 #pH water pH * 10 - phh2o
 
-com <- read_delim("results/databases/comm_final.csv", delim = ";")
+plot234 <- read.csv("data/data_plot234.csv")
+plot234$l
 
-com <- com %>%
-  rename(lat = exact_lat,
-         lon = exact_long)
+plot234_c <- plot234 %>%
+  select(Plotcode, lat, lon)
 
-comc <- com %>%
-  filter(stage == "recovering") %>%
-  filter(!is.na(lon)) %>%
-  select(id, lat, lon)
-
-xy <- terra::vect(comc, crs = "EPSG:4326") #Aqui tienes que poner el sistema de coordenadas en que tengas tus puntos
+xy <- terra::vect(plot234_c, crs = "EPSG:4326") #Aqui tienes que poner el sistema de coordenadas en que tengas tus puntos
 
 xy_tr <- terra::project(xy, "+proj=igh")
 plot(xy_tr)
 
 #
-# cec no esta en el paquete aunque aparece en los detalles
+#cec no esta en el paquete aunque aparece en los detalles
 # cec15 <- geodata::soil_world_vsi("cec", 15, "mean")
 # plot(cec15)
 #
 # cec15_xy <- terra::extract(cec15, xy_tr)
 
 #
-nit15 <- geodata::soil_world_vsi("nitrogen", 15, "mean")
-plot(nit15)
-
-nit15_xy <- terra::extract(nit15, xy_tr)
-
-#
-soc15 <- geodata::soil_world_vsi("soc", 15, "mean")
-plot(soc15)
-
-soc15_xy <- terra::extract(soc15, xy_tr)
+nit <- geodata::soil_world_vsi("nitrogen", 15, "mean")
+plot(nit)
+nit_xy <- terra::extract(nit, xy_tr)
 
 #
-ph15 <- geodata::soil_world_vsi("phh2o", 15, "mean")
-plot(ph15)
+ph <- geodata::soil_world_vsi("phh2o", 15, "mean")
+plot(ph)
+ph_xy <- terra::extract(ph, xy_tr)
 
-ph15_xy <- terra::extract(ph15, xy_tr)
 
-#
-bd15 <- geodata::soil_world_vsi("bdod", 15, "mean")
-plot(bd15)
+soc <- geodata::soil_world_vsi("soc", 15, "mean")
+plot(soc)
+soc_xy <- terra::extract(soc, xy_tr)
 
-bd15_xy <- terra::extract(bd15, xy_tr)
+Plotcode <- plot234$Plotcode
+nitrogen <- nit_xy$`nitrogen_5-15cm_mean`
+pH <- ph_xy$`phh2o_5-15cm_mean`
+org_C <- soc_xy$`soc_5-15cm_mean`
+
+soils <- cbind(Plotcode, nitrogen, pH, org_C)
+soils <- as.data.frame(soils)
+soils$pH <- soils$pH/10 
+
+write.csv(soils, "data/soil_data.csv")
+

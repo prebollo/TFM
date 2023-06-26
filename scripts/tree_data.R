@@ -1,10 +1,14 @@
 tree234 <- read.csv("data/tree234_plotscomparable234.csv")
 
-
 tree234 <- tree234[tree234$Cla=="A", ]
 tree234 <- tree234[tree234$Subclase== 1, ]
 str(tree234)
 table(tree234$Provincia) ##esta castilla leon
+"%ni%" <- Negate("%in%")
+tree234 <- tree234[tree234$Provincia!=35, ] ##quito canarias y tenerife
+tree234 <- tree234[tree234$Provincia!=38, ]
+tree234 <- tree234[!is.na(tree234$IFNcode), ]
+
 
 ###Los NAs de estas variables son en realidad 0.
 ###Asumimos que los NAs del Agente causante del daño son arboles sin daño
@@ -26,13 +30,12 @@ table(tree234$sppcompa)
 
 ##Quito PLOTS con especies exoticas (eucalipto, chopos y radiata)
 exoticas <- tree234[tree234$sppcompa%in% c(28, 51, 52, 58, 258, 60, 61, 62, 63, 64), ]
-"%ni%" <- Negate("%in%")
 tree234 <- tree234[tree234$Plotcode %ni% c(exoticas$Plotcode), ]
 tree234 <- tree234[!tree234$genero_ini=="Eucalyptus", ]
 tree234 <- tree234[!tree234$genero_fin=="Eucalyptus", ]##se han colado unos cuantos pero estan ya fuera
-table(tree234$sppcompa) ##Funciona, ya no hay codigos de estas especies
-
-
+tree234 <- tree234[!is.na(tree234$IFNcode), ] ##se crean un monton de columnas con todo NAs no se por que
+sum(is.na(tree234$Plotcode)) #alright
+table(tree234$sppcompa) ##Funciona, ya no hay codigos de eucalipto, chopos ni radiata
 
 ##cambio los Q. suber a su codigo (046) y el P. pinaster (026)
 tree234$sppcompa[tree234$sppcompa%in% c(646, 746, 846, 946)] <- 46
@@ -41,6 +44,7 @@ table(tree234$sppcompa)
 
 library(stringr)
 tree234$sppcompa <- str_pad(tree234$sppcompa, 3, pad = "0")
+sum(is.na(tree234$sppcompa))
 
 ##para clasificar especies en nleve, bdec o beve
 species <- read.csv("data/species.csv")
@@ -57,9 +61,10 @@ species <- rbind(species,speciesi)
 species$sppcompa <- str_pad(species$sppcompa, 3, pad = "0")
 sum(is.na(species))
 
+
 tree234 <- merge(tree234, species, by="sppcompa", all.x = T)
 sum(is.na(tree234$sppcompa)) 
-sum(is.na(tree234$type)) #Hay 10 NAs
+sum(is.na(tree234$type)) #Hay 2 NAs
 tree234 <- tree234[!is.na(tree234$type), ]
 sum(is.na(tree234$sppcompa))
 
@@ -231,27 +236,6 @@ ABspp <- list(ABnleve, ABbldec, ABbleve)
 ABspp <- Reduce(function(x, y) merge(x, y, all=TRUE), ABspp) 
 ABspp[is.na(ABspp)] <- 0
 
-##write for phylogenetic diversity
-tree2 <- tree23[, c("especie_ini", "nombre_ini")]
-tree3 <- tree23[, c("especie_fin", "nombre_fin")]
-tree3 <- tree3[!duplicated(tree3$especie_fin), ]
-names(tree3) <- c("especie", "nombre_fin")
-names(tree2) <- c("especie", "nombre_ini")
-
-tree2i <- merge(tree2, tree3, by="especie", all.x=T)
-tree2ii <- tree2i[!duplicated(tree2i$especie), ]
-tree2ii$nombre <- ifelse(is.na(tree2ii$nombre_fin), tree2ii$nombre_ini, tree2ii$nombre_fin)
-tree2 <- tree2ii[, c("especie", "nombre")]
-names(tree2) <- c("especie_ini", "nombre2")
-
-tree23 <- merge(tree23, tree2, by="especie_ini", all.X=T)
-sum(is.na(tree23$nombre2))
-
-write.csv(tree23, "tree23.csv")
-write.csv(tree34, "tree34.csv")
-
-
-
 ##agrego a nivel plot (por partes porque para el dbh hago la media)
 plot23 <- aggregate(cbind(ABm2haini, densini, ABdead, ABdeadpres, ABdeadabs, biotic3_low, biotic3_mid, biotic3_high, 
                             biotic3, fire3_low, fire3_mid, fire3_high, fire3, ABcut) ~ Plotcode, data = tree23, FUN = sum, na.rm = F)
@@ -271,22 +255,23 @@ plot34 <- aggregate(cbind(ABm2haini, ABm2hafin, densini, densfin, ABdead, ABdead
 dbh34 <- aggregate(cbind(dbhini, dbhfin) ~ Plotcode, data = tree34, FUN=mean, na.rm = F)
 
 plot34 <- merge(plot34, dbh34, by="Plotcode", all= T)
-sum(is.na(plot34))
+sum(is.na(plot34$mdbh3))
 
 names(plot34)
 names(plot34) <- c("Plotcode", "ba_ha3", "ba_ha4", "dens3", "dens4", "ABdead34", "ABdeadpres34", "ABdeadabs34", "biotic4_low",
                    "biotic4_mid", "biotic4_high", "biotic4", "fire4_low", "fire4_mid", "fire4_high", "fire4", "ABcut34", "mdbh3", "mdbh4")
 
+sum(is.na(plot34$mdbh4))
+sum(is.na(plot23$mdbh2))
 plot234 <- merge(plot23, plot34, by="Plotcode", all.x = T)
-plot234 <- na.omit(plot234) #Hay un plot con todo NAs en IFN4
 
 plot234 <- merge(plot234, ABspp, by="Plotcode", all.x = T)
-sum(is.na(plot234))
+sum(is.na(plot234$mdbh3))
+plot234 <- na.omit(plot234) #hay plots que estaban en IFN2 pero no en IFN3 y 4
 
 
 ###Cogemos plots donde hubiera al menos 1 arbol en el IFN2
-plot234 <- plot234[plot234$ba_ha2 !=0, ] ##Se pierden 521 plots
-
+plot234 <- plot234[plot234$ba_ha2 !=0, ] #13546 plots
 
 ##diversidad de shannon
 
@@ -377,17 +362,44 @@ Index4[['H']] <- datos_shannon4 %>%
 
 shannon_4 <- as.data.frame(Index4) 
 names(shannon_4) <- c("Plotcode", "H_4")
-
 shannon <- merge(shannon_2, shannon_3, by="Plotcode", all.x=T)
 shannon <- merge(shannon, shannon_4, by="Plotcode", all.x = T)
-sum(is.na(shannon)) 
+sum(is.na(shannon$H_4)) 
 
 #Hay NAs en el IFN4 porque son plots en los que se han muerto todos los arboles y no hay individuos... 
 #Pongo diversidad=0 o dejo el NA
+#dejo el NA
 
 plot234 <- merge(plot234, shannon, by="Plotcode", all.x = T)
-sum(is.na(plot234$H_4))
-sum(is.na(plot234))
+sum(is.na(plot234$H_4)) 
+
+##diversidad filogenetica
+phylodiv2 <- read.csv("data/phylo_div_ifn2.csv")
+phylodiv2 <- phylodiv2[, c("Plotcode", "mpd.obs")]
+names(phylodiv2) <- c("Plotcode", "phydiv2")
+
+phylodiv3 <- read.csv("data/phylo_div_ifn3.csv")
+phylodiv3 <- phylodiv3[, c("Plotcode", "mpd.obs")]
+names(phylodiv3) <- c("Plotcode", "phydiv3")
+
+phylodiv4 <- read.csv("data/phylo_div_ifn4.csv")
+phylodiv4 <- phylodiv4[, c("Plotcode", "mpd.obs")]
+names(phylodiv4) <- c("Plotcode", "phydiv4")
+
+phydiv <- merge(phylodiv2, phylodiv3, by="Plotcode", all = T)
+phydiv <- merge(phydiv, phylodiv4, by="Plotcode", all = T)
+
+phydiv <- phydiv[phydiv$Plotcode %in% plot234$Plotcode, ]
+#phydiv[is.na(phydiv$phydiv2), "phydiv2"] <- 0 
+#phydiv[is.na(phydiv$phydiv3), "phydiv3"] <- 0
+
+plots_muertos4 <- plot234[plot234$ba_ha4==0, ]
+plots_muertos4 <- plots_muertos4[!is.na(plots_muertos4$Plotcode), ]
+phydiv$phydiv4 <- ifelse(phydiv$Plotcode %in% plots_muertos4$Plotcode, phydiv$phydiv4, 
+                    ifelse(is.na(phydiv$phydiv4),0, phydiv$phydiv4))
+
+plot234 <- merge(plot234, phydiv, by="Plotcode", all.x = T)
+sum(is.na(phydiv$phydiv4))
 
 ###diversidad estructural 
 cvdbh2 <- do.call(data.frame, aggregate(dbhini~ Plotcode, data = tree23, FUN = function(x) c(mn = mean(x), sd = sd(x))))
@@ -410,13 +422,15 @@ cvdbh$cvdbh4 <- cvdbh$sddbh4/cvdbh$mdbh4
 summary(cvdbh$cvdbh4)
 cvdbh[is.na(cvdbh$cvdbh2), "cvdbh2"] <- 0
 cvdbh[is.na(cvdbh$cvdbh3), "cvdbh3"] <- 0
-cvdbh[is.na(cvdbh$cvdbh4), "cvdbh4"] <- 0
+sum(is.na(cvdbh$cvdbh4))
+
+plots_muertos4 <- plot234[plot234$ba_ha4==0, ]
+cvdbh$cvdbh4 <- ifelse(cvdbh$Plotcode %in% plots_muertos4$Plotcode, cvdbh$cvdbh4, 
+                         ifelse(is.na(cvdbh$cvdbh4),0, cvdbh$cvdbh4))
 
 cvdbh <- cvdbh[, c("Plotcode", "cvdbh2", "cvdbh3", "cvdbh4")]
 
 plot234 <- merge(plot234, cvdbh, by="Plotcode", all.x = T)
-sum(is.na(plot234))
-
 
 ###coordenadas por si queremos hacer un mapa o cualquier historia
 coordenadas <- read.csv2("data/coordenadas_abiertas.csv")
@@ -446,7 +460,7 @@ latlon <- latlon[!duplicated(latlon$Plotcode), ] #Hay duplicadas pero las coorde
 
 #merge con la base de datos principal
 plot234 <- merge(plot234, latlon, by="Plotcode", all.x = T)
-sum(is.na(plot234)) ##no perdemos datos :D
+sum(is.na(plot234$lat)) ##no perdemos datos :D
 
 
 ##temperatura y precipitacion
@@ -517,11 +531,10 @@ minSPEI <- na.omit(minSPEI)
 
 #cruzo los datos a la base de datos principal
 plot234i <- merge(plot234, minSPEI, by="Plotcode", all.x = T)
-sum(is.na(plot234i$SPEI2)) ###Pierdo 3138 plots con los datos de SPEI
+sum(is.na(plot234i$SPEI4)) ###Pierdo 3138 plots con los datos de SPEI
 plot234 <- plot234i[!is.na(plot234i$SPEI4),] ##En total tengo 11276 plots con todos los datos (a falta de diversidad)
 plot234 <- plot234[!is.infinite(plot234$avgMinTempAbs),] ##Tambien hay infinitos... se quedan en 11171 plots
-sum(is.na(plot234))
-
+sum(is.na(plot234$avgMinTemp))
 
 ###Esto lo hago si finalmente estudiamos pinos/quercineas
 #plot234$perc_pinquer2 <- ((plot234$ABpinus2+plot234$ABquercus2)/plot234$ba_ha2)*100
@@ -546,48 +559,67 @@ plot234$ABr_bleve34 <- (plot234$AB_bleve4+0.1)/(plot234$AB_bleve3+0.1)
 plot234$ABr_bldec23 <- (plot234$AB_bldec3+0.1)/(plot234$AB_bldec2+0.1)
 plot234$ABr_bldec34 <- (plot234$AB_bldec4+0.1)/(plot234$AB_bldec3+0.1)
 
-plot234$ABr23 <- (plot234$ba_ha3+0.1)/(plot234$ba_ha2+0.1)
-plot234$ABr34 <- (plot234$ba_ha4+0.1)/(plot234$ba_ha3+0.1)
-sum(is.na(plot234))
+#plot234$ABr23 <- (plot234$ba_ha3+0.1)/(plot234$ba_ha2+0.1)
+#plot234$ABr34 <- (plot234$ba_ha4+0.1)/(plot234$ba_ha3+0.1)
+#sum(is.na(plot234))
 
 
-write.csv(plot234, "data_plot234.csv")
+##soils from oilgrids.org
+##N, C org y pH
+soils <- read.csv("data/soil_data.csv")
+
+soils$X <- NULL
+plot234 <- merge(plot234, soils, by="Plotcode", all.x = T)
 
 
-IFN23 <- rep.int("IFN23", 11171)
-IFN34 <- rep.int("IFN34", 11171)
-nleve <- rep.int("nleve", 11171)
-bleve <- rep.int("bleve", 11171)
-bldec <- rep.int("bldec", 11171)
+##diversidad funcional
+fundiv <- read.csv("data/fundiv.csv")
+fundiv$X <- NULL
+
+
+fundiv[is.na(fundiv$Fdis2), "Fdis2"] <- 0
+fundiv[is.na(fundiv$Fdis3), "Fdis3"] <- 0
+fundiv[is.na(fundiv$Fdis4), "Fdis4"] <- 0
+fundiv$Fdis4 <- ifelse(fundiv$Plotcode %in% plots_muertos4$Plotcode, NA, fundiv$Fdis4)
+sum(is.na(fundiv$Fdis4))
+
+plot234 <- merge(plot234, fundiv, by="Plotcode", all.x = T)
+sum(is.na(plot234$Fdis2))
+
+write.csv(plot234, "data/data_plot234.csv")
+
+IFN23 <- rep.int("IFN23", 10650)
+IFN34 <- rep.int("IFN34", 10650)
+nl <- rep.int("nl", 10650)
+bleve <- rep.int("bleve", 10650)
+bldec <- rep.int("bldec", 10650)
 
 
 Plotcode <- c(plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode)
 IFNcode <- c(IFN23, IFN23, IFN23, IFN34, IFN34, IFN34)
-group <- c(nleve, bleve, bldec, nleve, bleve, bldec)
+group <- c(nl, bleve, bldec, nl, bleve, bldec)
 ABr <- c(plot234$ABr_nleve23, plot234$ABr_bleve23, plot234$ABr_bldec23, plot234$ABr_nleve34, plot234$ABr_bleve34, plot234$ABr_bldec34) 
 ba_ha <- c(plot234$ba_ha2, plot234$ba_ha2, plot234$ba_ha2, plot234$ba_ha3, plot234$ba_ha3, plot234$ba_ha3)
 dens <- c(plot234$dens2, plot234$dens2, plot234$dens2, plot234$dens3, plot234$dens3, plot234$dens3)
 mdbh <- c(plot234$mdbh2, plot234$mdbh2, plot234$mdbh2, plot234$mdbh3, plot234$mdbh3, plot234$mdbh3)
 mean_Temp <- c(plot234$avgMeanTemp, plot234$avgMeanTemp, plot234$avgMeanTemp, plot234$avgMeanTemp, plot234$avgMeanTemp, plot234$avgMeanTemp)
 avgPrcp <- c(plot234$avgPrcp, plot234$avgPrcp, plot234$avgPrcp, plot234$avgPrcp, plot234$avgPrcp, plot234$avgPrcp)
+WAI <- c(plot234$WAI, plot234$WAI, plot234$WAI, plot234$WAI, plot234$WAI, plot234$WAI)
 manag <- c(plot234$ABcut23, plot234$ABcut23, plot234$ABcut23, plot234$ABcut34, plot234$ABcut34, plot234$ABcut34) 
 fire <- c(plot234$fire3, plot234$fire3, plot234$fire3, plot234$fire4, plot234$fire4, plot234$fire4)
 pest <- c(plot234$biotic3, plot234$biotic3, plot234$biotic3, plot234$biotic4, plot234$biotic4, plot234$biotic4)
 drought <- c(plot234$SPEI3, plot234$SPEI3, plot234$SPEI3, plot234$SPEI4, plot234$SPEI4, plot234$SPEI4)
 cvdbh <- c(plot234$cvdbh2, plot234$cvdbh2, plot234$cvdbh2, plot234$cvdbh3, plot234$cvdbh3, plot234$cvdbh3)
-shannon <- c(plot234$H_23,plot234$H_23, plot234$H_23, plot234$H_34, plot234$H_34, plot234$H_34)
-WAI <- c(plot234$WAI, plot234$WAI, plot234$WAI, plot234$WAI, plot234$WAI, plot234$WAI)
-ABr_plot <- c(plot234$ABr23, plot234$ABr23, plot234$ABr23, plot234$ABr34, plot234$ABr34, plot234$ABr34)
+shannon <- c(plot234$H_2, plot234$H_2, plot234$H_2, plot234$H_3, plot234$H_3, plot234$H_3)
+phydiv <- c(plot234$phydiv2, plot234$phydiv2, plot234$phydiv2, plot234$phydiv3, plot234$phydiv3, plot234$phydiv3)
+fundiv <- c(plot234$Fdis2, plot234$Fdis2, plot234$Fdis2, plot234$Fdis3, plot234$Fdis3, plot234$Fdis3)
+pH <- c(plot234$pH, plot234$pH, plot234$pH, plot234$pH, plot234$pH, plot234$pH)
+C_org <- c(plot234$org_C, plot234$org_C, plot234$org_C, plot234$org_C, plot234$org_C, plot234$org_C)
+N <- c(plot234$nitrogen, plot234$nitrogen, plot234$nitrogen, plot234$nitrogen, plot234$nitrogen, plot234$nitrogen)
+
+data_model <- data.frame(Plotcode, IFNcode, group, ABr, ba_ha, dens, mdbh, mean_Temp, avgPrcp, WAI,
+                         manag, fire, pest, drought, cvdbh, shannon, phydiv, fundiv, pH, C_org, N)
 
 
-
-data_model <- data.frame(Plotcode, IFNcode, group, ABr, ABr_plot, ba_ha, dens, mdbh, mean_Temp, avgPrcp, WAI,
-                         manag, fire, pest, drought, cvdbh, shannon)
-
-
-write.csv(data_model, "data_model.csv")
-
-
-
-
+write.csv(data_model, "data/data_model.csv")
 
