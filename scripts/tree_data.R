@@ -1,5 +1,6 @@
 tree234 <- read.csv("data/tree234_plotscomparable234.csv")
 
+
 tree234 <- tree234[tree234$Cla=="A", ]
 tree234 <- tree234[tree234$Subclase== 1, ]
 str(tree234)
@@ -20,8 +21,8 @@ tree234[is.na(tree234$ABm2haini), "ABm2haini"] <- 0
 tree234[is.na(tree234$ABm2hafin), "ABm2hafin"] <- 0
 tree234[is.na(tree234$dbhini), "dbhini"] <- 0
 tree234[is.na(tree234$dbhfin), "dbhfin"] <- 0
-tree234[is.na(tree234$ABini), "ABini"] <- 0
-tree234[is.na(tree234$ABfin), "ABfin"] <- 0
+tree234[is.na(tree234$ABm2haini), "ABm2haini"] <- 0
+tree234[is.na(tree234$ABm2hafin), "ABm2hafin"] <- 0
 tree234[is.na(tree234$ABdead), "ABdead"] <- 0
 tree234[is.na(tree234$ABdeadpres), "ABdeadpres"] <- 0
 tree234[is.na(tree234$ABdeadabs), "ABdeadabs"] <- 0
@@ -272,6 +273,7 @@ plot234 <- na.omit(plot234) #hay plots que estaban en IFN2 pero no en IFN3 y 4
 
 ###Cogemos plots donde hubiera al menos 1 arbol en el IFN2
 plot234 <- plot234[plot234$ba_ha2 !=0, ] #13546 plots
+sum(is.na(plot234)) #guay
 
 ##diversidad de shannon
 
@@ -279,10 +281,8 @@ plot234 <- plot234[plot234$ba_ha2 !=0, ] #13546 plots
 ##para IFN3 e IFN4, solo la calculo con los arboles vivos
 ##los arboles muertos tienen codigo 999 en la especie
 
-datos_shannon2 <- tree23[, c("Plotcode", "especie_ini")]
 
-##Quito los NAs, que son arboles que en IFN2 no estaban así que calculo la diversidad con los que estan
-datos_shannon2 <- na.omit(datos_shannon2)
+datos_shannon2 <- tree23[, c("Plotcode", "especie_ini")]
 
 library(dplyr)
 
@@ -305,8 +305,6 @@ Index2[['H']] <- datos_shannon2 %>%
 
 shannon_2 <- as.data.frame(Index2) 
 names(shannon_2) <- c("Plotcode", "H_2")
-
-
 
 #tengo que quitar los arboles muertos en IFN3. Para ello voy a quitar todos los arboles que en el dbh inicial sea 0
 #(corresponden al dbh del IFN3) 
@@ -335,7 +333,7 @@ Index3[['H']] <- datos_shannon3 %>%
 
 shannon_3 <- as.data.frame(Index3) 
 names(shannon_3) <- c("Plotcode", "H_3")
-
+sum(is.na(shannon_3))
 
 ##Aqui si que tengo que quitar los muertos entre el periodo 3-4
 datos_shannon4 <- tree34[, c("Plotcode", "especie_fin", "state")]
@@ -362,6 +360,7 @@ Index4[['H']] <- datos_shannon4 %>%
 
 shannon_4 <- as.data.frame(Index4) 
 names(shannon_4) <- c("Plotcode", "H_4")
+sum(is.na(shannon_4))
 shannon <- merge(shannon_2, shannon_3, by="Plotcode", all.x=T)
 shannon <- merge(shannon, shannon_4, by="Plotcode", all.x = T)
 sum(is.na(shannon$H_4)) 
@@ -371,16 +370,18 @@ sum(is.na(shannon$H_4))
 #dejo el NA
 
 plot234 <- merge(plot234, shannon, by="Plotcode", all.x = T)
-sum(is.na(plot234$H_4)) 
+sum(is.na(plot234$H_2)) 
 
 ##diversidad filogenetica
 phylodiv2 <- read.csv("data/phylo_div_ifn2.csv")
 phylodiv2 <- phylodiv2[, c("Plotcode", "mpd.obs")]
 names(phylodiv2) <- c("Plotcode", "phydiv2")
+sum(is.na(phylodiv2))
 
 phylodiv3 <- read.csv("data/phylo_div_ifn3.csv")
 phylodiv3 <- phylodiv3[, c("Plotcode", "mpd.obs")]
 names(phylodiv3) <- c("Plotcode", "phydiv3")
+sum(is.na(phylodiv3))
 
 phylodiv4 <- read.csv("data/phylo_div_ifn4.csv")
 phylodiv4 <- phylodiv4[, c("Plotcode", "mpd.obs")]
@@ -390,16 +391,17 @@ phydiv <- merge(phylodiv2, phylodiv3, by="Plotcode", all = T)
 phydiv <- merge(phydiv, phylodiv4, by="Plotcode", all = T)
 
 phydiv <- phydiv[phydiv$Plotcode %in% plot234$Plotcode, ]
-#phydiv[is.na(phydiv$phydiv2), "phydiv2"] <- 0 
-#phydiv[is.na(phydiv$phydiv3), "phydiv3"] <- 0
+phydiv[is.na(phydiv$phydiv2), "phydiv2"] <- 0 
+phydiv[is.na(phydiv$phydiv3), "phydiv3"] <- 0
 
 plots_muertos4 <- plot234[plot234$ba_ha4==0, ]
 plots_muertos4 <- plots_muertos4[!is.na(plots_muertos4$Plotcode), ]
 phydiv$phydiv4 <- ifelse(phydiv$Plotcode %in% plots_muertos4$Plotcode, phydiv$phydiv4, 
                     ifelse(is.na(phydiv$phydiv4),0, phydiv$phydiv4))
+sum(is.na(phydiv$phydiv4))
 
 plot234 <- merge(plot234, phydiv, by="Plotcode", all.x = T)
-sum(is.na(phydiv$phydiv4))
+sum(is.na(plot234$phydiv2))
 
 ###diversidad estructural 
 cvdbh2 <- do.call(data.frame, aggregate(dbhini~ Plotcode, data = tree23, FUN = function(x) c(mn = mean(x), sd = sd(x))))
@@ -419,6 +421,7 @@ cvdbh <- merge(cvdbh, cvdbh4, by="Plotcode", all.x = T)
 cvdbh$cvdbh2 <- cvdbh$sddbh2/cvdbh$mdbh2
 cvdbh$cvdbh3 <- cvdbh$sddbh3/cvdbh$mdbh3
 cvdbh$cvdbh4 <- cvdbh$sddbh4/cvdbh$mdbh4
+sum(is.na(cvdbh$cvdbh4))
 summary(cvdbh$cvdbh4)
 cvdbh[is.na(cvdbh$cvdbh2), "cvdbh2"] <- 0
 cvdbh[is.na(cvdbh$cvdbh3), "cvdbh3"] <- 0
@@ -429,8 +432,10 @@ cvdbh$cvdbh4 <- ifelse(cvdbh$Plotcode %in% plots_muertos4$Plotcode, cvdbh$cvdbh4
                          ifelse(is.na(cvdbh$cvdbh4),0, cvdbh$cvdbh4))
 
 cvdbh <- cvdbh[, c("Plotcode", "cvdbh2", "cvdbh3", "cvdbh4")]
+sum(is.na(cvdbh$cvdbh4))
 
 plot234 <- merge(plot234, cvdbh, by="Plotcode", all.x = T)
+sum(is.na(plot234$cvdbh4))
 
 ###coordenadas por si queremos hacer un mapa o cualquier historia
 coordenadas <- read.csv2("data/coordenadas_abiertas.csv")
@@ -485,8 +490,8 @@ sum(is.na(clima))
 
 #uno el clima a la base de datos principal
 plot234 <- merge(plot234, clima, by="Plotcode", all.x = T)
-plot234 <- plot234[!is.na(plot234$WAI), ] ##Perdemos 728 plots que no tienen datos de clima
-
+plot234 <- plot234[!is.na(plot234$WAI), ] ##Perdemos 1 plot que no tiene dato de clima
+sum(is.na(plot234$avgBalhid))
 
 ##sequias (SPEI)
 climaifn <- read.csv2("data/climaifn.csv")
@@ -531,10 +536,11 @@ minSPEI <- na.omit(minSPEI)
 
 #cruzo los datos a la base de datos principal
 plot234i <- merge(plot234, minSPEI, by="Plotcode", all.x = T)
-sum(is.na(plot234i$SPEI4)) ###Pierdo 3138 plots con los datos de SPEI
+sum(is.na(plot234i$SPEI4)) ###Pierdo 2795 plots con los datos de SPEI
 plot234 <- plot234i[!is.na(plot234i$SPEI4),] ##En total tengo 11276 plots con todos los datos (a falta de diversidad)
-plot234 <- plot234[!is.infinite(plot234$avgMinTempAbs),] ##Tambien hay infinitos... se quedan en 11171 plots
-sum(is.na(plot234$avgMinTemp))
+plot234 <- plot234[!is.infinite(plot234$avgMinTempAbs),] ##Tambien hay infinitos... se quedan en 10650 plots
+sum(is.na(plot234$SPEI4))
+sum(is.na(plot234$H_4))
 
 ###Esto lo hago si finalmente estudiamos pinos/quercineas
 #plot234$perc_pinquer2 <- ((plot234$ABpinus2+plot234$ABquercus2)/plot234$ba_ha2)*100
@@ -550,17 +556,17 @@ sum(is.na(plot234$avgMinTemp))
 #sum(is.na(plot234))
 
 
-plot234$ABr_nleve23 <- (plot234$AB_nleve3+0.1)/(plot234$AB_nleve2+0.1)
-plot234$ABr_nleve34 <- (plot234$AB_nleve4+0.1)/(plot234$AB_nleve3+0.1)
+plot234$ABr_nleve23 <- (plot234$AB_nleve3)/(plot234$AB_nleve2)
+plot234$ABr_nleve34 <- (plot234$AB_nleve4)/(plot234$AB_nleve3)
 
-plot234$ABr_bleve23 <- (plot234$AB_bleve3+0.1)/(plot234$AB_bleve2+0.1)
-plot234$ABr_bleve34 <- (plot234$AB_bleve4+0.1)/(plot234$AB_bleve3+0.1)
+plot234$ABr_bleve23 <- (plot234$AB_bleve3)/(plot234$AB_bleve2)
+plot234$ABr_bleve34 <- (plot234$AB_bleve4)/(plot234$AB_bleve3)
 
-plot234$ABr_bldec23 <- (plot234$AB_bldec3+0.1)/(plot234$AB_bldec2+0.1)
-plot234$ABr_bldec34 <- (plot234$AB_bldec4+0.1)/(plot234$AB_bldec3+0.1)
+plot234$ABr_bldec23 <- (plot234$AB_bldec3)/(plot234$AB_bldec2)
+plot234$ABr_bldec34 <- (plot234$AB_bldec4)/(plot234$AB_bldec3)
 
-#plot234$ABr23 <- (plot234$ba_ha3+0.1)/(plot234$ba_ha2+0.1)
-#plot234$ABr34 <- (plot234$ba_ha4+0.1)/(plot234$ba_ha3+0.1)
+plot234$ABr23 <- (plot234$ba_ha3)/(plot234$ba_ha2)
+plot234$ABr34 <- (plot234$ba_ha4)/(plot234$ba_ha3)
 #sum(is.na(plot234))
 
 
@@ -585,14 +591,15 @@ sum(is.na(fundiv$Fdis4))
 
 plot234 <- merge(plot234, fundiv, by="Plotcode", all.x = T)
 sum(is.na(plot234$Fdis2))
+plot234 <- plot234[!is.na(plot234$Fdis3), ]
 
 write.csv(plot234, "data/data_plot234.csv")
 
-IFN23 <- rep.int("IFN23", 10650)
-IFN34 <- rep.int("IFN34", 10650)
-nl <- rep.int("nl", 10650)
-bleve <- rep.int("bleve", 10650)
-bldec <- rep.int("bldec", 10650)
+IFN23 <- rep.int("IFN23", 10645)
+IFN34 <- rep.int("IFN34", 10645)
+nl <- rep.int("nl", 10645)
+bleve <- rep.int("bleve", 10645)
+bldec <- rep.int("bldec", 10645)
 
 
 Plotcode <- c(plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode, plot234$Plotcode)
@@ -621,5 +628,6 @@ data_model <- data.frame(Plotcode, IFNcode, group, ABr, ba_ha, dens, mdbh, mean_
                          manag, fire, pest, drought, cvdbh, shannon, phydiv, fundiv, pH, C_org, N)
 
 
+sum(is.na(data_model))
 write.csv(data_model, "data/data_model.csv")
 

@@ -48,3 +48,37 @@ plot_distribution
 ggsave("plot_distribution.jpg",plot_distribution, dpi = 900, units = "cm", width =15 , height =15, limitsize = F)
 
 
+
+plot234$color23 <- ifelse(plot234$ABr23 < 1, "crece", 
+                          ifelse(plot234$ABr23 == 1, "x", "decrece"))
+
+summary(plot234$ABr23)
+cambios_23 <- 
+  ggplot(plot234) +
+  geom_point(aes(lon, lat, color=color23), 
+                          stroke = F, size=.8, show.legend = T, alpha =1)+
+  geom_polygon(data = portugal, aes(x = long, y = lat, group = group), fill="#E5E5E5")+
+  geom_polygon(data = francia, aes(x = long, y = lat, group = group), fill="#E5E5E5")+
+  geom_polygon(data = marruecos, aes(x = long, y = lat, group = group), fill="#E5E5E5")+
+  geom_polygon(data = argelia, aes(x = long, y = lat, group = group), fill="#E5E5E5")+
+  geom_polygon(data=mapa_mundo ,aes( x= long, y = lat, group = group),
+               fill = NA,
+               color = "black")+
+  ggtitle("")+ theme_bw()+
+  scale_color_manual(values = c("crece"= "#219E0D", "x"="yellow", "decrece" = "#B10A0A"))+ 
+  theme(axis.line = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(size=.6),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank())+
+  guides(color = guide_colourbar(title.position = "left"))+
+  coord_fixed (xlim= c(-9.5,4.5),
+               ylim= c(35.82,44),
+               ratio = 1.3)
+cambios_23
+
+ggsave("Figures/trend_map.jpg", cambios_23, dpi = 900, units = "cm", width =15 , height =15, limitsize = F)
+
+
